@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="copyright" content="All Rights Reserved, Copyright (C) 2013, Wuyeguo, Ltd."/>
+    <title>App版本管理</title>
+    <link rel="stylesheet" type="text/css" href="../easyui/1.3.4/themes/default/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/wu.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/icon.css"/>
+    <link rel="stylesheet" href="../kindeditor/themes/default/default.css"/>
+    <script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/locale/easyui-lang-zh_CN.js"></script>
+    <script charset="utf-8" src="../kindeditor/kindeditor-all.js"></script>
+    <script charset="utf-8" src="../kindeditor/lang/zh-CN.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/datagrid-filter.js"></script>
+</head>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <!-- Begin of toolbar -->
+    <div id="wu-toolbar-forecast">
+
+        <div class="wu-toolbar-searchForecast">
+            <label>创建时间:</label>
+            <input class="easyui-datetimebox" id="search_update_begin" name="startDate"
+                   data-options="showSeconds:true" style="width:150px">
+            -
+            <input class="easyui-datetimebox" id="search_update_end" name="endDate"
+                   data-options="showSeconds:true" style="width:150px">
+            <label>标题：</label><input id="search_title" class="wu-text" style="width:100px">
+            <label>状态:</label>
+            <select id="search_enable" class="easyui-combobox" name="search_enable" panelHeight="auto" style="width:100px;">
+                <option value="" selected="selected">全部</option>
+                <option value="true">可用</option>
+                <option value="false">禁用</option>
+            </select>
+
+
+            <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="clearBox()">重置查询</a>
+        </div>
+
+        <hr/>
+
+        <div class="toolbar-newsList-button">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_add_dialog()" plain="true">新增</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_edit_dialog()" plain="true">编辑</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_audit_ok_confirm()" plain="true">审核通过</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_audit_fail_confirm()"
+               plain="true">审核拒绝</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_del_confirm()" plain="true">删除</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reload()"
+               plain="true">刷新</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-save" onclick="openUpload()" plain="true">上传图片</a>
+        </div>
+
+    </div>
+    <!-- End of toolbar -->
+    <table id="dg" toolbar="#wu-toolbar-forecast"></table>
+</div>
+
+
+<div id="dialog-upload" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:700px; padding:10px;">
+    <form id="form-upload" method="post" enctype="multipart/form-data">
+        <div style="margin-top: 100px;margin-left: 200px;margin-bottom: 100px;">
+            <table>
+                <tr>
+                    <td width="60" align="right">图片上传:</td>
+                    <td><input type="file" onchange="change_photo()" id="file_upload_newsList" name="file_upload"/></td>
+                </tr>
+                <tr id="showTr">
+                    <td><label>图片预览</label></td>
+                    <td>
+                        <div id="Imgdiv_newsList"><img id="Img_newsList" width="200px" height="200px"/></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </form>
+</div>
+
+<div id="dialog-operation" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:750px; padding:10px;">
+    <form id="form-add-operation" method="post">
+        <input type="hidden" id="id_operation_add" name="id"/>
+        <table>
+            <tr>
+                <td width="100" align="right">标题:</td>
+                <td><input type="text" name="title" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
+
+            </tr>
+            <tr>
+                <td width="100" align="right">播放地址:</td>
+                <td><input type="text" name="playUrl" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
+            </tr>
+            <tr>
+                <td align="right">封面:</td>
+                <td>
+                    <input type="text" name="cover" class="easyui-validatebox" data-options="validType:'url'"
+                           style="width:500px!important;"/>
+                    <span class="l-btn-text icon-search l-btn-icon-left" onclick="showAbbr()"
+                          style="cursor:pointer">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="dialog-imaAbbr" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:480px; height:480px;padding:10px;">
+    <div id="abbrList" style="overflow: auto;">
+    </div>
+</div>
+
+
+<!-- End of easyui-dialog -->
+<script type="text/javascript">
+
+
+    function compareTime(startTime, endTime) {
+        var startTimes = startTime.substring(0, 10).split('-');
+        var endTimes = endTime.substring(0, 10).split('-');
+        startTime = startTimes[1] + '-' + startTimes[2] + '-' + startTimes[0] + ' ' + startTime.substring(10, 19);
+        endTime = endTimes[1] + '-' + endTimes[2] + '-' + endTimes[0] + ' ' + endTime.substring(10, 19);
+        var thisResult = (Date.parse(endTime) - Date.parse(startTime)) / 3600 / 1000;
+        if (thisResult < 0 || thisResult == 0) {
+            return false;
+        } else if (thisResult > 0) {
+            return true;
+        } else {
+            $.messager.alert('信息提示', '时间异常', 'info');
+        }
+    }
+
+    $(document).ready(function () {
+        var begin = new Date();
+        var end = new Date();
+        begin.setMonth(begin.getMonth() - 1);
+        // $('#search_update_begin').datetimebox('setValue', formatterDate(begin));
+        // $('#search_update_end').datetimebox('setValue', formatterDate(end));
+
+        $('#dg').datagrid({
+            url: "/admin/video/page",
+            method: "get",
+            queryParams: {
+                // createTime_begin: $("#search_update_begin").datetimebox("getValue"),
+                // createTime_end: $("#search_update_end").datetimebox("getValue")
+            },
+            rownumbers: true,  //是否显示行号
+            singleSelect: false,
+            pagination: true,
+            fitColumns: true,
+            pageSize: 20,
+            fit: true,
+            showFooter: true,
+            columns: [[
+                {checkbox: true},
+                {field: 'id', title: 'ID', width: 50, align: 'center'},
+                {field: 'title', title: '标题', width: 200, align: 'center'},
+                {field: 'cover', title: '封面', width: 200, align: 'center'},
+                {field: 'playUrl', title: '播放地址', width: 500, align: 'center'},
+                {field: 'comments', title: '评论数', width: 100, align: 'center'},
+                {field: 'likes', title: '点赞数', width: 100, align: 'center'},
+                {field: 'videos', title: '视频数', width: 100, align: 'center'},
+                {
+                    field: 'enable', title: '状态', width: 100, align: 'center', formatter: function (value, row, index) {
+                        return value ? "可用" : "禁用"
+                    }
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间',
+                    width: 200,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return formatterDate(new Date(value))
+                    }
+                },
+                {
+                    field: 'updateTime',
+                    title: '更新时间',
+                    width: 200,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return formatterDate(new Date(value))
+                    }
+                },
+            ]]
+        });
+
+    });
+
+    function formatterDate(date) {
+        var day = date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
+        var month = (date.getMonth() + 1) > 9 ? (date.getMonth() + 1) : "0" + (date.getMonth() + 1);
+        var hor = date.getHours();
+        var min = date.getMinutes();
+        var sec = date.getSeconds();
+        var s = date.getFullYear() + '-' + month + '-' + day + " " + hor + ":" + min + ":" + sec;
+        return s;
+    };
+
+
+    /**
+     * 手动刷新表格数据
+     */
+    function reload() {
+        $("#dg").datagrid("reload");
+    }
+
+    function reload_with_new_date() {
+        var begin = new Date();
+        var end = new Date();
+        begin.setMonth(begin.getMonth() - 1);
+        searchsearch()
+    }
+
+    /**
+     * 根据条件查询
+     */
+    function searchsearch() {
+        var $searchUpdateBegin = $("#search_update_begin");
+        var begin = $searchUpdateBegin.datetimebox("getValue");
+        console.log(begin)
+        var end = $("#search_update_end").datetimebox("getValue");
+        if ((begin.length != 0 && end.length == 0) || (begin.length == 0 && end.length != 0)) {
+            $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
+            return;
+        }
+        if (begin.length != 0 && end.length != 0 && !compareTime(begin, end)) {
+            $.messager.alert('信息提示', '开始日期不能大于结束日期', 'info');
+            return;
+        }
+        $('#dg').datagrid('load', {
+            "title": $("#title").val(),
+            "intro": $("#intro").val(),
+            "state": $("#state").combobox("getValue"),
+            "createTime_begin": begin,
+            "createTime_end": end
+        });
+    }
+
+    function clearBox() {
+        $("#title").val("");
+        $("#state").combobox("setValue", '');
+
+        var begin = new Date();
+        var end = new Date();
+        begin.setMonth(begin.getMonth() - 1);
+        $('#begin').datetimebox('setValue', formatterDate(begin));
+        $('#end').datetimebox('setValue', formatterDate(end));
+        searchsearch()
+    }
+
+
+    function getItem() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条意见反馈");
+            return
+        }
+        return item[0]
+    }
+
+    function get_selected_ids() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length == 0) {
+            $.messager.alert("提示", "至少选择一条视频");
+            return
+        }
+        var ids = ''
+        item.forEach(function (value, index, array) {
+            ids += value.id + ","
+        })
+        return ids
+    }
+
+
+    function open_del_confirm() {
+        var id = get_selected_ids();
+        $.messager.confirm("确认", "确认删除吗？", function (r) {
+            if (r) {
+                del(id)
+            }
+        })
+    }
+
+    function open_audit_ok_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认审核通过吗？", function (r) {
+            if (r) {
+                audit_ok(ids)
+            }
+        })
+    }
+
+    function open_audit_fail_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认审核拒绝吗？", function (r) {
+            if (r) {
+                audit_fail(ids)
+            }
+        })
+    }
+
+
+    function del(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/video/del',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function audit_ok(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/video/audit_ok',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function audit_fail(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/video/audit_fail',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    /**
+     * 打开图片上传页面
+     */
+    function openUpload() {
+        $('#dialog-upload').dialog({
+            closed: false,
+            modal: true,
+            title: "上传图片",
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: uploadPic
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-upload').dialog('close');
+                }
+            }]
+        });
+    }
+
+    /**
+     * 上传图片
+     */
+    function uploadPic() {
+        $('#form-upload').form('submit', {
+            url: 'https://res.jygoal.com/uploadhandler.ashx?type=img&domain=jygoal.com',
+            success: function (data) {
+                /*  var obj = eval('(' + data + ')');
+                  alert(obj.message);
+                  if (obj.message == '上传成功') {
+                      $.messager.alert('信息提示', '图片上传成功！', 'info');
+                      $('#dialog-newsList').dialog('close');
+                  }
+                  else {
+                      $.messager.alert('信息提示', '图片上传失败，请重新上传！', 'info');
+                  }*/
+            }
+        });
+        $('#dialog-upload').dialog('close');
+    }
+
+    /**
+     * 图片上传选择事件
+     */
+    function change_photo() {
+        PreviewImage($("input[name='file_upload']")[0], 'Img_newsList', 'Imgdiv_newsList');
+    }
+
+    /**
+     * 图片预览方法
+     */
+    function PreviewImage(fileObj, imgPreviewId, divPreviewId) {
+        var allowExtention = ".jpg,.bmp,.gif,.png";//允许上传文件的后缀名document.getElementById("hfAllowPicSuffix").value;
+        var extention = fileObj.value.substring(fileObj.value.lastIndexOf(".") + 1).toLowerCase();
+        var browserVersion = window.navigator.userAgent.toUpperCase();
+        if (allowExtention.indexOf(extention) > -1) {
+            if (fileObj.files) {//HTML5实现预览，兼容chrome、火狐7+等
+                if (window.FileReader) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        document.getElementById(imgPreviewId).setAttribute("src", e.target.result);
+                    }
+                    reader.readAsDataURL(fileObj.files[0]);
+                } else if (browserVersion.indexOf("SAFARI") > -1) {
+                    alert("不支持Safari6.0以下浏览器的图片预览!");
+                }
+            } else if (browserVersion.indexOf("MSIE") > -1) {
+                if (browserVersion.indexOf("MSIE 6") > -1) {//ie6
+                    document.getElementById(imgPreviewId).setAttribute("src", fileObj.value);
+                } else {//ie[7-9]
+                    fileObj.select();
+                    if (browserVersion.indexOf("MSIE 9") > -1)
+                        fileObj.blur();//不加上document.selection.createRange().text在ie9会拒绝访问
+                    var newPreview = document.getElementById(divPreviewId + "New");
+                    if (newPreview == null) {
+                        newPreview = document.createElement("div");
+                        newPreview.setAttribute("id", divPreviewId + "New");
+                        newPreview.style.width = document.getElementById(imgPreviewId).width + "px";
+                        newPreview.style.height = document.getElementById(imgPreviewId).height + "px";
+                        newPreview.style.border = "solid 1px #d2e2e2";
+                    }
+                    newPreview.style.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='scale',src='" + document.selection.createRange().text + "')";
+                    var tempDivPreview = document.getElementById(divPreviewId);
+                    tempDivPreview.parentNode.insertBefore(newPreview, tempDivPreview);
+                    tempDivPreview.style.display = "none";
+                }
+            } else if (browserVersion.indexOf("FIREFOX") > -1) {//firefox
+                var firefoxVersion = parseFloat(browserVersion.toLowerCase().match(/firefox\/([\d.]+)/)[1]);
+                if (firefoxVersion < 7) {//firefox7以下版本
+                    document.getElementById(imgPreviewId).setAttribute("src", fileObj.files[0].getAsDataURL());
+                } else {//firefox7.0+
+                    document.getElementById(imgPreviewId).setAttribute("src", window.URL.createObjectURL(fileObj.files[0]));
+                }
+            } else {
+                document.getElementById(imgPreviewId).setAttribute("src", fileObj.value);
+            }
+        } else {
+            alert("仅支持" + allowExtention + "为后缀名的文件!");
+            fileObj.value = "";//清空选中文件
+            if (browserVersion.indexOf("MSIE") > -1) {
+                fileObj.select();
+                document.selection.clear();
+            }
+            fileObj.outerHTML = fileObj.outerHTML;
+        }
+    }
+
+    function open_add_dialog() {
+        $('#dialog-operation').dialog({
+            closed: false,
+            modal: true,
+            title: "添加",
+            onOpen: function () {
+                $('#form-add-operation').form('clear');
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: add
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-operation').dialog('close');
+                }
+            }]
+        });
+    }
+
+    /**
+     * Name 添加记录
+     */
+    function add() {
+        $('#form-add-operation').form('submit', {
+            url: '/admin/video/add',
+            success: function (data) {
+                data = JSON.parse(data)
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                $('#dialog-operation').dialog('close');
+                reload()
+            }
+        });
+    }
+
+    function edit() {
+        $('#form-add-operation').form('submit', {
+            url: '/admin/video/edit',
+            success: function (data) {
+                data = JSON.parse(data)
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                $('#dialog-operation').dialog('close');
+                reload()
+            }
+        });
+    }
+
+    function open_edit_dialog() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条记录");
+            return
+        }
+        $('#dialog-operation').dialog({
+            closed: false,
+            modal: true,
+            title: "编辑",
+            onOpen: function () {
+                $('#form-add-operation').form('clear');
+                $("#form-add-operation input[name='id']").val(item[0].id)
+                $("#form-add-operation input[name='title']").val(item[0].title)
+                $("#form-add-operation input[name='intro']").val(item[0].intro)
+                $("#form-add-operation input[name='playUrl']").val(item[0].playUrl)
+                $("#form-add-operation input[name='cover']").val(item[0].cover)
+                $("#form-add-operation input[name='duration']").val(item[0].duration)
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: edit
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-operation').dialog('close');
+                }
+            }]
+        });
+    }
+
+    /**
+     * 缩略图列表展示
+     */
+    function showAbbr() {
+        $('#dialog-imaAbbr').dialog({
+            closed: false,
+            modal: true,
+            title: "选择",
+            onOpen: function () {
+                $.ajax({
+                    url: '/news/imgAbbr',
+                    method: "get",
+                    dataType: "json",
+                    success: function (data) {
+                        var html_str = "";
+                        for (var i = 0; i < data.length; i++) {
+                            var dirName = data[i].dirName;
+                            html_str += "<div style=\"margin:5px;border:0.5px solid gray\">" +
+                                "<p style=\"width:100%;\">文件夹名:" + dirName + ",共" + data[i].fileCount + "个文件</p>";
+                            var imgArray = data[i].files;
+                            for (var j = 0; j < imgArray.length; j++) {
+                                html_str += "<img width=\"50px\" style=\"margin:2px\" onclick='setSrc(this.src)' src=\"https://res.jygoal.com/img/" + dirName + "/" + imgArray[j].fileName + "\">";
+                            }
+                            html_str += "</div>";
+                        }
+                        $("#abbrList").html(html_str);
+                    }
+                })
+            },
+            buttons: [{
+                text: '关闭',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-imaAbbr').dialog('close');
+                }
+            }]
+        });
+    }
+
+    function setSrc(str) {
+        $("input[name='cover']").val(str);
+        $('#dialog-imaAbbr').dialog('close');
+    }
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="copyright" content="All Rights Reserved, Copyright (C) 2013, Wuyeguo, Ltd."/>
+    <title>EasyUI Web Admin Power by Wuyeguo</title>
+    <link rel="stylesheet" type="text/css" href="../easyui/1.3.4/themes/default/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/wu.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/icon.css"/>
+    <link rel="stylesheet" href="../kindeditor/themes/default/default.css"/>
+    <script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/locale/easyui-lang-zh_CN.js"></script>
+    <script charset="utf-8" src="../kindeditor/kindeditor-all.js"></script>
+    <script charset="utf-8" src="../kindeditor/lang/zh-CN.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/datagrid-filter.js"></script>
+</head>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <div data-options="region:'west',border:true,split:true," title="分类管理" style="width:150px; padding:5px;">
+        <ul id="tree-newsList" class="easyui-tree"
+            data-options="url:'/news/initTree',method:'get',animate:true,onClick:function(node){showDataGrid(node.attributes.typeId);}"></ul>
+    </div>
+    <div data-options="region:'center',border:false">
+        <input type="hidden" id="typeIdSelected" value="1">
+        <!-- Begin of toolbar -->
+        <div id="toolbar-newsList">
+            <div class="toolbar-newsList-button">
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_audit_ok_confirm()"
+                   plain="true">审核通过</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_hot_confirm()"
+                   plain="true">设置热门</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_hot_cancel_confirm()"
+                   plain="true">取消热门</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-add" onclick="openAdd_newsList()"
+                   plain="true">添加</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-edit" onclick="openEdit_newsList()"
+                   plain="true">修改</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="remove()" plain="true">删除</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reloadToHome_newsList()"
+                   plain="true">刷新</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-save" onclick="openUpload()" plain="true">上传图片</a>
+                <!--<a href="#" class="easyui-linkbutton" iconCls="icon-edit" onclick="openCity()" plain="true">修改城市</a>-->
+            </div>
+            <div class="toolbar-newsList-search">
+                <label>标题：</label><input id="title_search" class="wu-text" style="width:100px">
+                <label>起始时间：</label><input id="startTime_search" class="easyui-datetimebox" style="width:150px">
+                <label>结束时间：</label><input id="endTime_search" class="easyui-datetimebox" style="width:150px">
+                <!--               <label>热门：</label>
+                               <select id="isHot_search" class="easyui-combobox" panelHeight="auto" style="width:100px">
+                                   <option value="2">全部</option>
+                                   <option value="1">是</option>
+                                   <option value="0">否</option>
+                               </select>-->
+                <label>状态：</label>
+                <select id="state_search" class="easyui-combobox" panelHeight="auto" style="width:100px">
+                    <option value="3">全部</option>
+                    <option value="-1">删除</option>
+                    <option value="0">待审核</option>
+                    <option value="1">已审核</option>
+                </select>
+
+                <label>推荐单ID：</label><input id="scheme_search" class="wu-text" style="width:100px">
+                <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="clearBox()">重置查询</a>
+                <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchBy5()">开始检索</a>
+                <a href="#" style="color: red;" class="easyui-linkbutton" iconCls="icon-search" onclick="search_only_hot()">只看热门</a>
+            </div>
+        </div>
+        <!-- End of toolbar -->
+        <table id="datagrid-newsList" toolbar="#toolbar-newsList"></table>
+    </div>
+</div>
+<!-- Begin of easyui-dialog -->
+<div id="dialog-newsList" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:700px; padding:10px;">
+    <form id="form-add-newsList" method="post">
+        <input type="hidden" id="id_newsList_add" name="id"/>
+        <table>
+            <tr>
+                <td width="100" align="right">类型:</td>
+                <td>
+                    <select id="type_add" class="easyui-combobox" name="typeCode" panelHeight="auto">
+                        <option value="1" selected="selected">竞彩专家</option>
+                        <option value="2">足球资讯</option>
+                        <option value="3">足球场外</option>
+                        <option value="99">推荐单文章</option>
+                    </select>
+                </td>
+                <td width="60" align="right">标题:</td>
+                <td><input type="text" name="title" class="wu-text"/></td>
+            </tr>
+            <tr>
+                <td align="right">排序:</td>
+                <td><input type="text" name="orderNo" class="wu-text"/></td>
+                <td align="right">作者:</td>
+                <td><input type="text" name="author" class="wu-text"/></td>
+            </tr>
+            <!--  <tr>
+                  <td align="right">来源:</td>
+                  <td><input type="text" name="origin" class="wu-text"/></td>
+
+            </tr>-->
+            <tr>
+                <td align="right">链接地址:</td>
+                <td><input type="text" name="linkUrl" class="easyui-validatebox" data-options="validType:'url'"
+                           style="width:264px!important;"/></td>
+                <td align="right">图片地址:</td>
+                <td>
+                    <input type="text" name="iconUrl" class="easyui-validatebox" data-options="validType:'url'"
+                           style="width:230px!important;"/>
+                    <span class="l-btn-text icon-search l-btn-icon-left" onclick="showAbbr()"
+                          style="cursor:pointer">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                </td>
+            </tr>
+
+
+            <tr>
+                <td valign="top" align="right">内 容:</td>
+            </tr>
+            <tr>
+                <td></td>
+                <td colspan="3">
+                    <!--<textarea name="content" rows="6" class="wu-textarea" style="width:260px"></textarea>-->
+                    <textarea id="content_newsList_add" rows="6" name="content" class="easyui-validatebox"
+                              style="width:600px;"
+                              data-options="required:true,validType:'length[1,1000000]'"
+                              invalidMessage="最大长度不能超过1000000"></textarea>
+                </td>
+            </tr>
+
+            <tr>
+                <td align="right">关联的推荐单ID:</td>
+                <td><input type="text" name="scheme" class="wu-text"/></td>
+            </tr>
+        </table>
+    </form>
+</div>
+<div id="dialog-upload" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:700px; padding:10px;">
+    <form id="form-upload" method="post" enctype="multipart/form-data">
+        <div style="margin-top: 100px;margin-left: 200px;margin-bottom: 100px;">
+            <table>
+                <tr>
+                    <td width="60" align="right">图片上传:</td>
+                    <td><input type="file" onchange="change_photo()" id="file_upload_newsList" name="file_upload"/></td>
+                </tr>
+                <tr id="showTr">
+                    <td><label>图片预览</label></td>
+                    <td>
+                        <div id="Imgdiv_newsList"><img id="Img_newsList" width="200px" height="200px"/></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </form>
+</div>
+
+<div id="dialog-imaAbbr" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:480px; height:480px;padding:10px;">
+    <div id="abbrList" style="overflow: auto;">
+    </div>
+</div>
+<!-- End of easyui-dialog -->
+<script type="text/javascript">
+    /**
+     * 缩略图列表展示
+     */
+    function showAbbr() {
+        $('#dialog-imaAbbr').dialog({
+            closed: false,
+            modal: true,
+            title: "选择",
+            onOpen: function () {
+                $.ajax({
+                    url: '/news/imgAbbr',
+                    method: "get",
+                    dataType: "json",
+                    success: function (data) {
+                        var html_str = "";
+                        for (var i = 0; i < data.length; i++) {
+                            var dirName = data[i].dirName;
+                            html_str += "<div style=\"margin:5px;border:0.5px solid gray\">" +
+                                "<p style=\"width:100%;\">文件夹名:" + dirName + ",共" + data[i].fileCount + "个文件</p>";
+                            var imgArray = data[i].files;
+                            for (var j = 0; j < imgArray.length; j++) {
+                                html_str += "<img width=\"50px\" style=\"margin:2px\" onclick='setSrc(this.src)' src=\"https://res.jygoal.com/img/" + dirName + "/" + imgArray[j].fileName + "\">";
+                            }
+                            html_str += "</div>";
+                        }
+                        $("#abbrList").html(html_str);
+                    }
+                })
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: function () {
+                    $('#dialog-imaAbbr').dialog('close');
+                }
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-imaAbbr').dialog('close');
+                }
+            }]
+        });
+    }
+
+
+    /**
+     * Name 分页过滤器
+     */
+    function pagerFilter(data) {
+        if (typeof data.length == 'number' && typeof data.splice == 'function') {// is array
+            data = {
+                total: data.length,
+                rows: data
+            }
+        }
+        var dg = $(this);
+        var opts = dg.datagrid('options');
+        var pager = dg.datagrid('getPager');
+        pager.pagination({
+            onSelectPage: function (pageNum, pageSize) {
+                opts.pageNumber = pageNum;
+                opts.pageSize = pageSize;
+                pager.pagination('refresh', {pageNumber: pageNum, pageSize: pageSize});
+                dg.datagrid('loadData', data);
+            }
+        });
+        if (!data.originalRows) {
+            data.originalRows = (data.rows);
+        }
+        var start = (opts.pageNumber - 1) * parseInt(opts.pageSize);
+        var end = start + parseInt(opts.pageSize);
+        data.rows = (data.originalRows.slice(start, end));
+        return data;
+    }
+
+
+    /**
+     * 图片上传选择事件
+     */
+    function change_photo() {
+        PreviewImage($("input[name='file_upload']")[0], 'Img_newsList', 'Imgdiv_newsList');
+    }
+
+    /**
+     * 图片预览方法
+     */
+    function PreviewImage(fileObj, imgPreviewId, divPreviewId) {
+        var allowExtention = ".jpg,.bmp,.gif,.png";//允许上传文件的后缀名document.getElementById("hfAllowPicSuffix").value;
+        var extention = fileObj.value.substring(fileObj.value.lastIndexOf(".") + 1).toLowerCase();
+        var browserVersion = window.navigator.userAgent.toUpperCase();
+        if (allowExtention.indexOf(extention) > -1) {
+            if (fileObj.files) {//HTML5实现预览，兼容chrome、火狐7+等
+                if (window.FileReader) {
+                    var reader = new FileReader();
+                    reader.onload = function (e) {
+                        document.getElementById(imgPreviewId).setAttribute("src", e.target.result);
+                    }
+                    reader.readAsDataURL(fileObj.files[0]);
+                } else if (browserVersion.indexOf("SAFARI") > -1) {
+                    alert("不支持Safari6.0以下浏览器的图片预览!");
+                }
+            } else if (browserVersion.indexOf("MSIE") > -1) {
+                if (browserVersion.indexOf("MSIE 6") > -1) {//ie6
+                    document.getElementById(imgPreviewId).setAttribute("src", fileObj.value);
+                } else {//ie[7-9]
+                    fileObj.select();
+                    if (browserVersion.indexOf("MSIE 9") > -1)
+                        fileObj.blur();//不加上document.selection.createRange().text在ie9会拒绝访问
+                    var newPreview = document.getElementById(divPreviewId + "New");
+                    if (newPreview == null) {
+                        newPreview = document.createElement("div");
+                        newPreview.setAttribute("id", divPreviewId + "New");
+                        newPreview.style.width = document.getElementById(imgPreviewId).width + "px";
+                        newPreview.style.height = document.getElementById(imgPreviewId).height + "px";
+                        newPreview.style.border = "solid 1px #d2e2e2";
+                    }
+                    newPreview.style.filter = "progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='scale',src='" + document.selection.createRange().text + "')";
+                    var tempDivPreview = document.getElementById(divPreviewId);
+                    tempDivPreview.parentNode.insertBefore(newPreview, tempDivPreview);
+                    tempDivPreview.style.display = "none";
+                }
+            } else if (browserVersion.indexOf("FIREFOX") > -1) {//firefox
+                var firefoxVersion = parseFloat(browserVersion.toLowerCase().match(/firefox\/([\d.]+)/)[1]);
+                if (firefoxVersion < 7) {//firefox7以下版本
+                    document.getElementById(imgPreviewId).setAttribute("src", fileObj.files[0].getAsDataURL());
+                } else {//firefox7.0+
+                    document.getElementById(imgPreviewId).setAttribute("src", window.URL.createObjectURL(fileObj.files[0]));
+                }
+            } else {
+                document.getElementById(imgPreviewId).setAttribute("src", fileObj.value);
+            }
+        } else {
+            alert("仅支持" + allowExtention + "为后缀名的文件!");
+            fileObj.value = "";//清空选中文件
+            if (browserVersion.indexOf("MSIE") > -1) {
+                fileObj.select();
+                document.selection.clear();
+            }
+            fileObj.outerHTML = fileObj.outerHTML;
+        }
+    }
+
+    /**
+     * 打开图片上传页面
+     */
+    function openUpload() {
+        $('#dialog-upload').dialog({
+            closed: false,
+            modal: true,
+            title: "上传图片",
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: uploadPic
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-upload').dialog('close');
+                }
+            }]
+        });
+    }
+
+    /**
+     * 上传图片
+     */
+    function uploadPic() {
+        $('#form-upload').form('submit', {
+            url: 'https://res.jygoal.com/uploadhandler.ashx?type=img&domain=jygoal.com',
+            success: function (data) {
+                /*  var obj = eval('(' + data + ')');
+                  alert(obj.message);
+                  if (obj.message == '上传成功') {
+                      $.messager.alert('信息提示', '图片上传成功！', 'info');
+                      $('#dialog-newsList').dialog('close');
+                  }
+                  else {
+                      $.messager.alert('信息提示', '图片上传失败，请重新上传！', 'info');
+                  }*/
+            }
+        });
+        $('#dialog-upload').dialog('close');
+    }
+
+    /**
+     * 重置查询条件
+     */
+    function clearBox() {
+        $("#title_search").val("");
+        $("#scheme_search").val("");
+        $("#startTime_search").datetimebox("setValue", "");
+        $("#endTime_search").datetimebox("setValue", "");
+        /*  $("#isHot_search").combobox("setValue", '2');*/
+        $("#state_search").combobox("setValue", '3');
+        /* $("#isTop_search").combobox("setValue", '2');*/
+        loadTab();
+    }
+
+    /**
+     * 手动刷新表格数据
+     */
+    function reloadToHome_newsList() {
+        clearBox();
+        $('#datagrid-newsList').datagrid('load', {
+            "typeId": $("#typeIdSelected").val()
+        });
+    }
+
+    /**
+     * 不改变当前页的刷新
+     */
+    function reload() {
+        $('#datagrid-newsList').datagrid('reload');
+    }
+
+    /**
+     *条件查询
+     */
+    function searchBy5() {
+        var sTime = $("#startTime_search").datetimebox("getValue");
+        var eTime = $("#endTime_search").datetimebox("getValue");
+        if ((sTime.length != 0 && eTime.length == 0) || (sTime.length == 0 && eTime.length != 0)) {
+            $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
+            return;
+        }
+        if (sTime.length != 0 && eTime.length != 0 && !compareTime(sTime, eTime)) {
+            $.messager.alert('信息提示', '开始日期不能大于结束日期', 'info');
+            return;
+        }
+        $('#datagrid-newsList').datagrid('load', {
+            "typeCode": $("#typeIdSelected").val(),
+            "title": $("#title_search").val().trim(),
+            "scheme": $("#scheme_search").val().trim(),
+            "startTime": sTime,
+            "endTime": eTime,
+            /* "isHot": $("#isHot_search").combobox("getValue"),*/
+            "state": $("#state_search").combobox("getValue")
+            /* "isTop": $("#isTop_search").combobox("getValue")*/
+        });
+    }
+
+    function search_only_hot() {
+        var sTime = $("#startTime_search").datetimebox("getValue");
+        var eTime = $("#endTime_search").datetimebox("getValue");
+        if ((sTime.length != 0 && eTime.length == 0) || (sTime.length == 0 && eTime.length != 0)) {
+            $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
+            return;
+        }
+        if (sTime.length != 0 && eTime.length != 0 && !compareTime(sTime, eTime)) {
+            $.messager.alert('信息提示', '开始日期不能大于结束日期', 'info');
+            return;
+        }
+        $('#datagrid-newsList').datagrid('load', {
+            "typeCode": $("#typeIdSelected").val(),
+            "title": $("#title_search").val().trim(),
+            "scheme": $("#scheme_search").val().trim(),
+            "startTime": sTime,
+            "endTime": eTime,
+            /* "isHot": $("#isHot_search").combobox("getValue"),*/
+            "state": $("#state_search").combobox("getValue"),
+            "hot": true
+            /* "isTop": $("#isTop_search").combobox("getValue")*/
+        });
+    }
+
+    /**
+     * 时间比较函数
+     */
+    function compareTime(startTime, endTime) {
+        var startTimes = startTime.substring(0, 10).split('-');
+        var endTimes = endTime.substring(0, 10).split('-');
+        startTime = startTimes[1] + '-' + startTimes[2] + '-' + startTimes[0] + ' ' + startTime.substring(10, 19);
+        endTime = endTimes[1] + '-' + endTimes[2] + '-' + endTimes[0] + ' ' + endTime.substring(10, 19);
+        var thisResult = (Date.parse(endTime) - Date.parse(startTime)) / 3600 / 1000;
+        if (thisResult < 0 || thisResult == 0) {
+            return false;
+        } else if (thisResult > 0) {
+            return true;
+        } else {
+            $.messager.alert('信息提示', '时间异常', 'info');
+        }
+    }
+
+    $(function () {
+        var endDate = new Date();
+        var startDate = new Date();
+        startDate.setDate(startDate.getDate() - 7);
+        $('#startTime_search').datetimebox('setValue', formatterDate(startDate));
+        $('#endTime_search').datetimebox('setValue', formatterDate(endDate));
+        loadTab();
+    })
+
+    function formatterDate(date) {
+        var day = date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
+        var month = (date.getMonth() + 1) > 9 ? (date.getMonth() + 1) : "0" + (date.getMonth() + 1);
+        var hor = date.getHours();
+        var min = date.getMinutes();
+        var sec = date.getSeconds();
+        return date.getFullYear() + '-' + month + '-' + day + " " + hor + ":" + min + ":" + sec;
+    };
+
+    /**
+     *加载datagrid数据
+     */
+    function loadTab() {
+        $('#datagrid-newsList').datagrid({
+            url: '/news/initTreeTab',
+            queryParams: {
+                typeCode: $("#typeIdSelected").val(),
+                startTime: $("#startTime_search").datetimebox("getValue"),
+                endTime: $("#endTime_search").datetimebox("getValue")
+            },
+            method: "get",
+            rownumbers: true,
+            singleSelect: false,
+            pageSize: 20,
+            pagination: true,
+            fitColumns: true,
+            fit: true,
+            columns: [[
+                {checkbox: true},
+                {field: 'id', title: 'ID', width: 50, sortable: true},
+                {field: 'typeCode', title: '资讯类型', width: 50, hidden: true},
+                {field: 'typeName', title: '资讯类型', width: 50},
+                {field: 'title', title: '标题', width: 250},
+                {field: 'content', title: '内容', width: 160, hidden: true},
+                {field: 'iconUrl', title: '图片地址', width: 200},
+                {field: 'linkUrl', title: '链接地址', width: 200},
+                {field: 'author', title: '作者', width: 80},
+                {field: 'createTime', title: '创建时间', width: 160},
+                {field: 'updatetime', title: '更新时间', width: 160, hidden: true},
+                {
+                    field: 'state', title: '审核状态', width: 50, formatter: function (value, row, index) {
+                        if (row.state == -1) {
+                            return "删除";
+                        } else if (row.state == 0) {
+                            return "待审核";
+                        } else if (row.state == 1) {
+                            return "已审核";
+                        }
+                    }
+                },
+                {field: 'comments', title: '评论数', width: 50},
+                {field: 'likes', title: '点赞数', width: 50},
+                {
+                    field: 'hot', title: '热门', width: 50, formatter: function (value, row, index) {
+                        return value == 1 ? "√" : "×";
+                    }
+                },
+                {field: 'scheme', title: '推荐单ID', width: 80}
+            ]]
+        });
+    }
+
+    /**
+     * 根据左侧树菜单重新初始化表格数据
+     */
+    function showDataGrid(text) {
+        $("#typeIdSelected").val(text);
+        clearBox();
+        loadTab();
+    }
+
+    /**
+     * Name 添加记录
+     */
+    function add() {
+        $('#form-add-newsList').form('submit', {
+            url: '/news/addNews',
+            success: function (data) {
+                var obj = eval('(' + data + ')');
+                if (obj.ok) {
+                    $.messager.alert('信息提示', '提交成功！', 'info');
+                    $('#dialog-newsList').dialog('close');
+                    reloadToHome_newsList();
+                }
+                else {
+                    $.messager.alert('信息提示', obj.msg, 'info');
+                }
+            }
+        });
+    }
+
+    /**
+     * Name 修改记录
+     */
+    function edit() {
+        $('#form-add-newsList').form('submit', {
+            url: '/news/editNews',
+            success: function (data) {
+                var obj = eval('(' + data + ')');
+                if (obj.ok) {
+                    $.messager.alert('信息提示', '提交成功！', 'info');
+                    $('#dialog-newsList').dialog('close');
+                    reload();
+                }
+                else {
+                    $.messager.alert('信息提示', obj.msg, 'info');
+                }
+            }
+        });
+    }
+
+    /**
+     * Name 删除记录
+     */
+    function remove() {
+        var items = $('#datagrid-newsList').datagrid('getChecked');
+        if (items.length == 0) {
+            $.messager.alert('提示', '至少选择一行！！！');
+            return;
+        }
+        $.messager.confirm('信息提示', '确定要删除该记录？', function (result) {
+            if (result) {
+                var ids = "";
+                for (var i = 0; i < items.length; i++) {
+                    ids += items[i].id + ",";
+                }
+                $.ajax({
+                    url: '/news/delNews',
+                    data: {"ids": ids.substr(0, ids.length - 1)},
+                    success: function (data) {
+                        if (data.ok) {
+                            $.messager.alert('信息提示', '删除成功！', 'info');
+                            reload();
+                        }
+                        else {
+                            $.messager.alert('信息提示', data.msg, 'info');
+                        }
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Name 打开添加窗口
+     */
+    function openAdd_newsList() {
+        $('#dialog-newsList').dialog({
+            closed: false,
+            modal: true,
+            title: "添加",
+            onOpen: function () {
+                $('#form-add-newsList').form('clear');
+                $('#type_add').combobox("setValue", 1)
+                KindEditor.html("#content_newsList_add", "");
+                /*  $("#type_newsList_add").combobox({
+                      url: '/news/bContent',
+                      valueField: 'code',
+                      textField: 'name'
+                  });
+                  $("#lotteryID_newsList_add").combobox({
+                      url: '/news/lott',
+                      valueField: 'ID',
+                      textField: 'Name'
+                  });
+                  $.ajax({
+                      url: "/data/appNames",
+                      method: "get",
+                      dataType: "json",
+                      success: function (data) {
+                          var checkboxs = "";
+                          for (var i = 0; i < data.length; i++) {
+                              checkboxs += "<input type='checkbox' name='appCode' value='" + data[i].ID + "'/>" + data[i].AppName;
+                          }
+                          $("#appName_newsList_add").html(checkboxs);
+                      }
+                  });
+                  $.ajax({
+                      url: "/data/appStore",
+                      method: "get",
+                      dataType: "json",
+                      success: function (data) {
+                          var checkboxs = "";
+                          for (var i = 0; i < data.length; i++) {
+                              checkboxs += "<input type='checkbox' name='appStore' value='" + data[i].ChannelCode + "'/>" + data[i].ChannelName;
+                          }
+                          $("#appStore_newsList_add").html(checkboxs);
+                      }
+                  });*/
+                KindEditor.create('textarea[name="content"]', {
+                    resizeType: 1, width: "100%", height: "200px", afterChange: function () {
+                        this.sync();
+                    }, afterBlur: function () {
+                        this.sync();
+                    }
+                });
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: add
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-newsList').dialog('close');
+                }
+            }]
+        });
+    }
+
+    /**
+     * Name 打开修改窗口
+     */
+    function openEdit_newsList() {
+        var item = $('#datagrid-newsList').datagrid('getChecked');
+        if (item.length == 0 || item.length > 1) {
+            $.messager.alert('提示', '每次只能修改一行！！！');
+            return;
+        }
+        $('#dialog-newsList').dialog({
+            closed: false,
+            modal: true,
+            title: "修改信息",
+            onOpen: function () {
+                $('#form-add-newsList').form('clear');
+
+                KindEditor.html("#content_newsList_add", "");
+                /* $("#type_newsList_add").combobox({
+                     url: '/news/bContent',
+                     valueField: 'code',
+                     textField: 'name'
+                 });
+                 $("#lotteryID_newsList_add").combobox({
+                     url: '/news/lott',
+                     valueField: 'ID',
+                     textField: 'Name'
+                 });
+                 $.ajax({
+                     url: "/data/appNames",
+                     method: "get",
+                     dataType: "json",
+                     success: function (data) {
+                         var checkboxs = "";
+                         for (var i = 0; i < data.length; i++) {
+                             checkboxs += "<input type='checkbox' name='appCode' value='" + data[i].ID + "'/>" + data[i].AppName;
+                         }
+                         $("#appName_newsList_add").html(checkboxs);
+                         var appCodes = item[0].appCode.split(",");
+                         for (var i = 0; i < appCodes.length; i++) {
+                             checkBox("appCode", appCodes[i]);
+                         }
+                     }
+                 });
+                 $.ajax({
+                     url: "/data/appStore",
+                     method: "get",
+                     dataType: "json",
+                     success: function (data) {
+                         var checkboxs = "";
+                         for (var i = 0; i < data.length; i++) {
+                             checkboxs += "<input type='checkbox' name='appStore' value='" + data[i].ChannelCode + "'/>" + data[i].ChannelName;
+                         }
+                         $("#appStore_newsList_add").html(checkboxs);
+                         var appStores = item[0].appStore.split(",");
+                         for (var j = 0; j < appStores.length; j++) {
+                             checkBox("appStore", appStores[j]);
+                         }
+                     }
+                 });*/
+                KindEditor.create('textarea[name="content"]', {
+                    resizeType: 1, width: "100%", height: "200px", afterChange: function () {
+                        this.sync();
+                    }, afterBlur: function () {
+                        this.sync();
+                    }
+                });
+                KindEditor.html("#content_newsList_add", item[0].content);
+                $('#type_add').combobox("setValue", item[0].typeCode)
+                $("input[name='title']").val(item[0].title);
+                $("input[name='iconUrl']").val(item[0].iconUrl);
+                $("input[name='author']").val(item[0].author);
+                /*$("input[name='origin']").val(item[0].origin);*/
+                $("input[name='orderNo']").val(item[0].orderNo);
+                $("input[name='linkUrl']").val(item[0].linkUrl);
+                $("input[name='scheme']").val(item[0].scheme);
+                /* $("#sTimeDia_newsList_add").datetimebox('setValue', item[0].startTime);
+                 $("#eTimeDia_newsList_add").datetimebox('setValue', item[0].endTime);
+                 $("#type_newsList_add").combobox('setValue', item[0].type);
+                 $("#lotteryID_newsList_add").combobox('setValue', item[0].lotteryID);
+                 $("#isTop_newsList_add").combobox('setValue', item[0].isTop);
+                 checkBox("userTags", item[0].userTags);
+                 checkBox("appType", item[0].appType);*/
+                $("#id_newsList_add").val(item[0].id);
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: edit
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-newsList').dialog('close');
+                }
+            }]
+        });
+    }
+
+    function get_selected_ids() {
+        var item = $("#datagrid-newsList").datagrid("getChecked");
+        if (item.length == 0) {
+            $.messager.alert("提示", "至少选择一条记录");
+            return
+        }
+        var ids = ''
+        item.forEach(function (value, index, array) {
+            ids += value.id + ","
+        })
+        return ids
+    }
+
+
+    function open_audit_ok_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认审核通过吗？", function (r) {
+            if (r) {
+                audit_ok(ids)
+            }
+        })
+    }
+
+
+    function audit_ok(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/news/audit_ok',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    /**
+     *checkbox初始化方法
+     */
+    function checkBox(name, vals) {
+        if (!vals) {
+            return;
+        }
+        $("input[name='" + name + "']").each(function () {
+            if ($(this).val() == vals) {
+                $(this).prop("checked", true);
+            }
+        });
+    }
+
+    function setSrc(str) {
+        $("input[name='iconUrl']").val(str);
+        $('#dialog-imaAbbr').dialog('close');
+    }
+
+
+    function open_hot_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认设置为热门吗？", function (r) {
+            if (r) {
+                hot(ids)
+            }
+        })
+    }
+
+
+    function hot(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/news/hot',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+
+    function open_hot_cancel_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认取消热门吗？", function (r) {
+            if (r) {
+                hotCancel(ids)
+            }
+        })
+    }
+
+
+    function hotCancel(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/news/hotCancel',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+</script>
+</body>
+</html>

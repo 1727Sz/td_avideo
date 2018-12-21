@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="copyright" content="All Rights Reserved, Copyright (C) 2013, Wuyeguo, Ltd."/>
+    <title>意见反馈</title>
+    <link rel="stylesheet" type="text/css" href="../easyui/1.3.4/themes/default/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/wu.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/icon.css"/>
+    <link rel="stylesheet" href="../kindeditor/themes/default/default.css"/>
+    <script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/locale/easyui-lang-zh_CN.js"></script>
+    <script charset="utf-8" src="../kindeditor/kindeditor-all.js"></script>
+    <script charset="utf-8" src="../kindeditor/lang/zh-CN.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/datagrid-filter.js"></script>
+</head>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <!-- Begin of toolbar -->
+    <div id="wu-toolbar-forecast">
+
+        <div class="wu-toolbar-searchForecast">
+            <label>内容：</label><input id="content" class="wu-text" style="width:100px">
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <label>创建时间:</label>
+            <input class="easyui-datetimebox" id="feedback_create_begin" name="startDate"
+                   data-options="showSeconds:true" style="width:150px">
+            -
+            <input class="easyui-datetimebox" id="feedback_create_end" name="endDate"
+                   data-options="showSeconds:true" style="width:150px">
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <label>用户昵称：</label><input id="nickname" class="wu-text" style="width:100px">
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <label>审核状态:</label>
+            <select id="state" class="easyui-combobox" name="state" panelHeight="auto" style="width:60px;">
+                <option value="" selected="selected">全部</option>
+                <option value="0">待审核</option>
+                <option value="1">通过</option>
+                <option value="2">拒绝</option>
+            </select>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="clearBox()">重置查询</a>
+        </div>
+
+        <hr/>
+
+        <div class="toolbar-newsList-button">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_reply_dialog()"
+               plain="true">回复</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_audit_ok_confirm()" plain="true">审核通过</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_audit_fail_confirm()"
+               plain="true">审核拒绝</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_del_confirm()" plain="true">删除</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reload()"
+               plain="true">刷新</a>
+        </div>
+
+    </div>
+    <!-- End of toolbar -->
+    <table id="dg"  toolbar="#wu-toolbar-forecast"></table>
+</div>
+<!-- End of easyui-dialog -->
+<script type="text/javascript">
+
+    var feedback_state = {
+        0: "待审核",
+        1: "<span style='color: green;'>通过</span>",
+        2: "<span style='color: red;'>拒绝</span>"
+    }
+
+    $(document).ready(function () {
+        var endDate = new Date();
+        var startDate = new Date();
+        startDate.setDate(startDate.getDate() - 1);
+        $("#feedback_create_begin").datetimebox("setValue", formatterDate(startDate));
+        $("#feedback_create_end").datetimebox("setValue", formatterDate(endDate));
+
+        $('#dg').datagrid({
+            url: "/admin/feedback/page",
+            method: "get",
+            queryParams: {
+                createTimeEnd: $("#feedback_create_end").datetimebox("getValue"),
+                createTimeBegin: $("#feedback_create_begin").datetimebox("getValue")
+            },
+            rownumbers: true,  //是否显示行号
+            singleSelect: false,
+            pagination: true,
+            fitColumns: true,
+            pageSize: 20,
+            fit: true,
+            showFooter: true,
+            columns: [[
+                {checkbox: true},
+                {field: 'id', title: 'ID', width: 50, align: 'center'},
+                {field: 'userID', title: '用户ID', width: 50, align: 'center'},
+                {field: 'userNickname', title: '用户昵称', width: 100, align: 'center'},
+                {field: 'content', title: '意见反馈内容', width: 200, align: 'center'},
+                {field: 'createTime', title: '时间', width: 100, align: 'center'},
+                {
+                    field: 'state', title: '状态', width: 50, align: 'center', formatter: function (value, row, index) {
+                        return feedback_state[row.state]
+                    }
+                },
+                {field: 'reply', title: '回复', width: 100, align: 'center'}
+            ]]
+        });
+
+    });
+
+    function formatterDate(date) {
+        var day = date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
+        var month = (date.getMonth() + 1) > 9 ? (date.getMonth() + 1) : "0" + (date.getMonth() + 1);
+        var hor = date.getHours();
+        var min = date.getMinutes();
+        var sec = date.getSeconds();
+        return date.getFullYear() + '-' + month + '-' + day + " " + hor + ":" + min + ":" + sec;
+    };
+
+    /**
+     * 手动刷新表格数据
+     */
+    function reload() {
+        $("#dg").datagrid("reload");
+    }
+
+    /**
+     * 根据条件查询
+     */
+    function searchsearch() {
+        var startDate = $("#feedback_create_begin").datetimebox("getValue");
+        var endDate = $("#feedback_create_end").datetimebox("getValue");
+        if ((startDate.length != 0 && endDate.length == 0) || (startDate.length == 0 && endDate.length != 0)) {
+            $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
+            return;
+        }
+        if (startDate.length != 0 && endDate.length != 0 && !compareTime(startDate, endDate)) {
+            $.messager.alert('信息提示', '开始日期不能大于结束日期', 'info');
+            return;
+        }
+        $('#dg').datagrid('load', {
+            "nickname": $("#nickname").val().trim(),
+            "createTimeBegin": startDate,
+            "createTimeEnd": endDate,
+            "content": $("#content").val(),
+            "state": $("#state").combobox("getValue")
+        });
+    }
+
+    function clearBox() {
+        $("#nickname").val("");
+        $("#content").val("");
+        $("#state").combobox("setValue", '');
+        var endDate = new Date();
+        var startDate = new Date();
+        startDate.setDate(startDate.getDate() - 1);
+        $("#feedback_create_begin").datetimebox("setValue", formatterDate(startDate));
+        $("#feedback_create_end").datetimebox("setValue", formatterDate(endDate));
+        searchsearch()
+    }
+
+    /**
+     * 时间比较函数
+     */
+    function compareTime(startTime, endTime) {
+        var startTimes = startTime.substring(0, 10).split('-');
+        var endTimes = endTime.substring(0, 10).split('-');
+        startTime = startTimes[1] + '-' + startTimes[2] + '-' + startTimes[0] + ' ' + startTime.substring(10, 19);
+        endTime = endTimes[1] + '-' + endTimes[2] + '-' + endTimes[0] + ' ' + endTime.substring(10, 19);
+        var thisResult = (Date.parse(endTime) - Date.parse(startTime)) / 3600 / 1000;
+        if (thisResult < 0 || thisResult == 0) {
+            return false;
+        } else if (thisResult > 0) {
+            return true;
+        } else {
+            $.messager.alert('信息提示', '时间异常', 'info');
+        }
+    }
+
+    /**
+     * Name 载入数据
+     */
+
+
+    function item() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条意见反馈");
+            return
+        }
+        return item[0]
+    }
+
+    function get_selected_ids() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length == 0) {
+            $.messager.alert("提示", "至少选择一条意见反馈");
+            return
+        }
+        var ids = ''
+        item.forEach(function (value, index, array) {
+            ids += value.id + ","
+        })
+        return ids
+    }
+
+    function open_reply_dialog() {
+
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条意见反馈");
+            return
+        }
+
+        $.messager.prompt('意见反馈', '回复', function (r) {
+            if (r) {
+                reply(r, item[0].id)
+            }
+        });
+    }
+
+    function open_del_confirm() {
+        var id = item().id;
+        $.messager.confirm("确认", "确认删除吗？", function (r) {
+            if (r) {
+                del(id)
+            }
+        })
+    }
+
+    function open_audit_ok_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认审核通过吗？", function (r) {
+            if (r) {
+                audit_ok(ids)
+            }
+        })
+    }
+
+    function open_audit_fail_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认审核拒绝吗？", function (r) {
+            if (r) {
+                audit_fail(ids)
+            }
+        })
+    }
+
+    function reply(r, id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/feedback/reply',
+            data: JSON.stringify({reply: r, id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function del(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/feedback/del',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function audit_ok(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/feedback/audit/ok',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function audit_fail(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/feedback/audit/fail',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+</script>
+
+</body>
+</html>

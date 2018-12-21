@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="copyright" content="All Rights Reserved, Copyright (C) 2013, Wuyeguo, Ltd."/>
+    <title>App版本管理</title>
+    <link rel="stylesheet" type="text/css" href="../easyui/1.3.4/themes/default/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/wu.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/icon.css"/>
+    <link rel="stylesheet" href="../kindeditor/themes/default/default.css"/>
+    <script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/locale/easyui-lang-zh_CN.js"></script>
+    <script charset="utf-8" src="../kindeditor/kindeditor-all.js"></script>
+    <script charset="utf-8" src="../kindeditor/lang/zh-CN.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/datagrid-filter.js"></script>
+</head>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <!-- Begin of toolbar -->
+    <div id="wu-toolbar-forecast">
+
+        <div class="wu-toolbar-searchForecast">
+            <label>平台:</label>
+            <select id="platform" class="easyui-combobox" name="platform" panelHeight="auto" style="width:100px;">
+                <option value="" selected="selected">全部</option>
+                <option value="1">Android</option>
+                <option value="2">iOS</option>
+            </select>
+            <label>版本号：</label><input id="version_no" class="wu-text" style="width:100px">
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <label>最低版本号：</label><input id="low_version_no" class="wu-text" style="width:100px">
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            &nbsp;&nbsp;&nbsp;&nbsp;
+            <label>状态:</label>
+            <select id="state" class="easyui-combobox" name="state" panelHeight="auto" style="width:60px;">
+                <option value="" selected="selected">全部</option>
+                <option value="1">启用</option>
+                <option value="0">停用</option>
+            </select>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="clearBox()">重置查询</a>
+        </div>
+
+        <hr/>
+
+        <div class="toolbar-newsList-button">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_add_dialog()" plain="true">新增</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_edit_dialog()" plain="true">编辑</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_enable_confirm()"
+               plain="true">启用</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_disable_confirm()"
+               plain="true">停用</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_del_confirm()" plain="true">删除</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reload()"
+               plain="true">刷新</a>
+        </div>
+
+    </div>
+    <!-- End of toolbar -->
+    <table id="dg" toolbar="#wu-toolbar-forecast"></table>
+</div>
+
+<div id="dialog-operation" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:750px; padding:10px;">
+    <form id="form-add-operation" method="post">
+        <input type="hidden" id="id_add" name="id"/>
+        <table>
+            <tr>
+                <td width="100" align="right">平台:</td>
+                <td>
+                    <select id="platform_add" class="easyui-combobox" name="platform" panelHeight="auto">
+                        <option value="1" selected="selected">Android</option>
+                        <option value="2">iOS</option>
+                    </select>
+                </td>
+
+            </tr>
+            <tr>
+                <td width="100" align="right">版本号:</td>
+                <td><input id="version_add" type="text" name="version" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0"/></td>
+                <td>提示：三段式，且每段不超过9。如：1.9.9</td>
+
+            </tr>
+            <tr>
+                <td width="100" align="right">最低版本号:</td>
+                <td><input id="low_version_add" type="text" name="low_version" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0"/></td>
+                <td>提示：所谓最低版本号，即需升级的版本号</td>
+
+            </tr>
+            <tr>
+                <td width="100" align="right">包下载地址:</td>
+                <td><input id="apk_add" type="text" name="apk" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0"/></td>
+                <td>提示：一般为安卓APK的下载地址</td>
+            </tr>
+            <tr>
+                <td width="100" align="right">下载页面地址:</td>
+                <td><input id="download_add" type="text" name="download" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0"/></td>
+                <td>提示：一般为包下载的引导页地址</td>
+            </tr>
+            <tr>
+                <td width="100" align="right">包大小:</td>
+                <td><input id="apk_size_add" type="text" name="apkSize" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0"/></td>
+                <td>提示：如：45M</td>
+            </tr>
+            <tr>
+                <td width="100" align="right">版本描述:</td>
+                <td><input id="remark_add" type="text" name="remark" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0"/></td>
+                <td>提示：App升级弹框展示</td>
+            </tr>
+            <tr>
+                <td width="100" align="right">是否强制升级:</td>
+                <td>
+                    <select id="upgrade_add" class="easyui-combobox" name="upgrade" panelHeight="auto">
+                        <option value="false" selected="selected">非强制升级</option>
+                        <option value="true">强制升级</option>
+                    </select>
+                </td>
+                <td>提示：若配置为强制升级，如果App不升级则无法继续使用</td>
+            </tr>
+
+        </table>
+    </form>
+</div>
+<!-- End of easyui-dialog -->
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        $('#dg').datagrid({
+            url: "/admin/version/page",
+            method: "get",
+            queryParams: {},
+            rownumbers: true,  //是否显示行号
+            singleSelect: false,
+            pagination: true,
+            fitColumns: true,
+            pageSize: 20,
+            fit: true,
+            showFooter: true,
+            columns: [[
+                {checkbox: true},
+                {field: 'id', title: 'ID', width: 50, align: 'center'},
+                {
+                    field: 'platform',
+                    title: '平台',
+                    width: 100,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return version_platform_type[value]
+                    }
+                },
+                {field: 'versionNo', title: '版本号', width: 100, align: 'center'},
+                {field: 'lowVersionNo', title: '最低版本号', width: 100, align: 'center'},
+                {field: 'apkURL', title: '包下载地址', width: 200, align: 'center'},
+                {field: 'downloadUrl', title: '下载页面', width: 200, align: 'center'},
+                {field: 'apkSize', title: '包大小', width: 50, align: 'center'},
+                {field: 'remark', title: '备注', width: 100, align: 'center'},
+                {
+                    field: 'upgrade',
+                    title: '是否强制升级',
+                    width: 100,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return value ? "强制" : "非强制"
+                    }
+                },
+                {
+                    field: 'state', title: '状态', width: 100, align: 'center', formatter: function (value, row, index) {
+                        return version_state[value]
+                    }
+                },
+                {
+                    field: 'updateTime',
+                    title: '更新时间',
+                    width: 200,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return formatterDate(new Date(value))
+                    }
+                },
+
+            ]]
+        });
+    })
+
+    var version_platform_type = {
+        1: "Android",
+        2: "iOS"
+    }
+
+    // 状态(0-停用，1-启用，-1 删除)
+    var version_state = {
+        0: "停用",
+        1: "启用"
+    }
+
+
+    /**
+     * 手动刷新表格数据
+     */
+    function reload() {
+        $("#dg").datagrid("reload");
+    }
+
+    /**
+     * 根据条件查询
+     */
+    function searchsearch() {
+        $('#dg').datagrid('load', {
+            "version": $("#version_no").val(),
+            "lowVersion": $("#low_version_no").val(),
+            "state": $("#state").combobox("getValue"),
+            "platform": $("#platform").combobox("getValue")
+        });
+    }
+
+    function clearBox() {
+        $("#version_no").val("");
+        $("#low_version_no").val("");
+        $("#state").combobox("setValue", '');
+        $("#platform").combobox("setValue", '');
+        searchsearch()
+    }
+
+
+    function item() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条意见反馈");
+            return
+        }
+        return item[0]
+    }
+
+    function get_selected_ids() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length == 0) {
+            $.messager.alert("提示", "至少选择一条意见反馈");
+            return
+        }
+        var ids = ''
+        item.forEach(function (value, index, array) {
+            ids += value.id + ","
+        })
+        return ids
+    }
+
+    function open_reply_dialog() {
+
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条意见反馈");
+            return
+        }
+
+        $.messager.prompt('意见反馈', '回复', function (r) {
+            if (r) {
+                reply(r, item[0].id)
+            }
+        });
+    }
+
+    function open_del_confirm() {
+        var id = get_selected_ids();
+        $.messager.confirm("确认", "确认删除吗？", function (r) {
+            if (r) {
+                del(id)
+            }
+        })
+    }
+
+    function open_enable_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认启用吗？", function (r) {
+            if (r) {
+                enable(ids)
+            }
+        })
+    }
+
+    function open_disable_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认停用吗？", function (r) {
+            if (r) {
+                disable(ids)
+            }
+        })
+    }
+
+    function reply(r, id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/feedback/reply',
+            data: JSON.stringify({reply: r, id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function del(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/version/del',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function enable(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/version/enable',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function disable(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/version/disable',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function formatterDate(date) {
+        var day = date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
+        var month = (date.getMonth() + 1) > 9 ? (date.getMonth() + 1) : "0" + (date.getMonth() + 1);
+        var hor = date.getHours();
+        var min = date.getMinutes();
+        var sec = date.getSeconds();
+        var s = date.getFullYear() + '-' + month + '-' + day + " " + hor + ":" + min + ":" + sec;
+        console.log(s)
+        return s;
+    };
+
+    /**
+     * Name 打开添加窗口
+     */
+    function open_add_dialog() {
+        $('#dialog-operation').dialog({
+            closed: false,
+            modal: true,
+            title: "添加",
+            onOpen: function () {
+                $('#form-add-operation').form('clear');
+                $('#upgrade_add').combobox("setValue", false)
+                $('#platform_add').combobox("setValue", 1)
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: add
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-operation').dialog('close');
+                }
+            }]
+        });
+    }
+
+    /**
+     * Name 添加记录
+     */
+    function add() {
+        $('#form-add-operation').form('submit', {
+            url: '/admin/version/add',
+            success: function (data) {
+                data = JSON.parse(data)
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                $('#dialog-operation').dialog('close');
+                reload()
+            }
+        });
+    }
+
+    function open_edit_dialog() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条记录");
+            return
+        }
+        $('#dialog-operation').dialog({
+            closed: false,
+            modal: true,
+            title: "编辑",
+            onOpen: function () {
+                console.log(item[0])
+                $('#form-add-operation').form('clear');
+                $("#id_add").val(item[0].id)
+                $("#platform_add").combobox("setValue", item[0].platform)
+                $("#version_add").val(item[0].versionNo)
+                $("#apk_add").val(item[0].apkURL)
+                $("#download_add").val(item[0].downloadUrl)
+                $("#apk_size_add").val(item[0].apkSize)
+                $("#remark_add").val(item[0].remark)
+                $("#low_version_add").val(item[0].lowVersionNo)
+                $("#upgrade_add").combobox("setValue", item[0].upgrade)
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: edit
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-operation').dialog('close');
+                }
+            }]
+        });
+    }
+
+    function edit() {
+        $('#form-add-operation').form('submit', {
+            url: '/admin/version/edit',
+            success: function (data) {
+                data = JSON.parse(data)
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                $('#dialog-operation').dialog('close');
+                reload()
+            }
+        });
+    }
+
+</script>
+
+</body>
+</html>

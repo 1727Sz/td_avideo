@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="copyright" content="All Rights Reserved, Copyright (C) 2013, Wuyeguo, Ltd."/>
+    <title>评论</title>
+    <link rel="stylesheet" type="text/css" href="../easyui/1.3.4/themes/default/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/wu.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/icon.css"/>
+    <link rel="stylesheet" href="../kindeditor/themes/default/default.css"/>
+    <script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/locale/easyui-lang-zh_CN.js"></script>
+    <script charset="utf-8" src="../kindeditor/kindeditor-all.js"></script>
+    <script charset="utf-8" src="../kindeditor/lang/zh-CN.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/datagrid-filter.js"></script>
+</head>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <!-- Begin of toolbar -->
+    <div id="wu-toolbar-forecast">
+
+        <div class="toolbar-newsList-button">
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="flush_stat()"
+               plain="true" style="color: red;">强制刷新战绩</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reload()"
+               plain="true">刷新</a>
+
+        </div>
+
+    </div>
+    <!-- End of toolbar -->
+    <table id="dg"  toolbar="#wu-toolbar-forecast"></table>
+</div>
+<!-- End of easyui-dialog -->
+<script type="text/javascript">
+
+
+    $(document).ready(function () {
+
+        $('#dg').datagrid({
+            url: "/admin/statistics/page",
+            method: "get",
+            queryParams: {},
+            rownumbers: true,  //是否显示行号
+            singleSelect: false,
+            pagination: true,
+            fitColumns: true,
+            pageSize: 20,
+            fit: true,
+            showFooter: true,
+            columns: [[
+                {checkbox: true},
+                {field: 'userID', title: '用户ID', width: 50, align: 'center'},
+                {field: 'hit10', title: '近10期命中', width: 100, align: 'center'},
+                {field: 'profitRate10', title: '近10期盈利率', width: 100, align: 'center'},
+                {field: 'maxHitCombo', title: '最大连红', width: 100, align: 'center'},
+                {field: 'total', title: '总推单', width: 100, align: 'center'},
+                {field: 'followBetMoney', title: '跟单总金额', width: 100, align: 'center'},
+                {field: 'followBetWonMoney', title: '跟单中奖总金额', width: 100, align: 'center'},
+                {field: 'latestUpdateTime', title: '最后更新时间', width: 100, align: 'center'},
+            ]]
+        });
+
+    });
+
+
+    /**
+     * 手动刷新表格数据
+     */
+    function reload() {
+        $("#dg").datagrid("reload");
+    }
+
+
+    function flush_stat(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/statistics/flush',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+</script>
+
+</body>
+</html>
