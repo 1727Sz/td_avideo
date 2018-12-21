@@ -18,6 +18,7 @@ public class T_Comment {
     @ApiModelProperty("用户昵称") String nickname;
     @ApiModelProperty("用户头像") String avatar;
     boolean zj;
+    int target;
 
     @Data
     public static class CommentArrayVo {

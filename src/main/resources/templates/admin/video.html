@@ -17,7 +17,7 @@
     <!-- Begin of toolbar -->
     <div id="wu-toolbar-forecast">
 
-        <div class="wu-toolbar-searchForecast">
+        <div class="wu-toolbar-searchForecast" style="display: none">
             <label>创建时间:</label>
             <input class="easyui-datetimebox" id="begin" name="startDate"
                    data-options="showSeconds:true" style="width:150px">
@@ -44,13 +44,9 @@
         <div class="toolbar-newsList-button">
             <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_add_dialog()" plain="true">新增</a>
             <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_edit_dialog()" plain="true">编辑</a>
-            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_audit_ok_confirm()" plain="true">审核通过</a>
-            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_audit_fail_confirm()"
-               plain="true">审核拒绝</a>
             <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_del_confirm()" plain="true">删除</a>
             <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reload()"
                plain="true">刷新</a>
-            <a href="#" class="easyui-linkbutton" iconCls="icon-save" onclick="openUpload()" plain="true">上传图片</a>
         </div>
 
     </div>
@@ -59,25 +55,7 @@
 </div>
 
 
-<div id="dialog-upload" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
-     style="width:700px; padding:10px;">
-    <form id="form-upload" method="post" enctype="multipart/form-data">
-        <div style="margin-top: 100px;margin-left: 200px;margin-bottom: 100px;">
-            <table>
-                <tr>
-                    <td width="60" align="right">图片上传:</td>
-                    <td><input type="file" onchange="change_photo()" id="file_upload_newsList" name="file_upload"/></td>
-                </tr>
-                <tr id="showTr">
-                    <td><label>图片预览</label></td>
-                    <td>
-                        <div id="Imgdiv_newsList"><img id="Img_newsList" width="200px" height="200px"/></div>
-                    </td>
-                </tr>
-            </table>
-        </div>
-    </form>
-</div>
+
 
 <div id="dialog-operation" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
      style="width:750px; padding:10px;">
@@ -104,11 +82,6 @@
                     <span class="l-btn-text icon-search l-btn-icon-left" onclick="showAbbr()"
                           style="cursor:pointer">&nbsp;&nbsp;&nbsp;&nbsp;</span>
                 </td>
-            </tr>
-            <tr>
-                <td width="100" align="right">播放时长/秒:</td>
-                <td><input type="text" name="duration" class="easyui-validatebox"
-                           data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
             </tr>
         </table>
     </form>
@@ -176,11 +149,6 @@
                 {field: 'playUrl', title: '播放地址', width: 500, align: 'center'},
                 {field: 'comments', title: '评论数', width: 100, align: 'center'},
                 {field: 'likes', title: '点赞数', width: 100, align: 'center'},
-                {
-                    field: 'enable', title: '状态', width: 100, align: 'center', formatter: function (value, row, index) {
-                        return value ? "可用" : "禁用"
-                    }
-                },
                 {
                     field: 'createTime',
                     title: '创建时间',
@@ -291,9 +259,23 @@
 
     function open_del_confirm() {
         var id = get_selected_ids();
+        console.log(id);
         $.messager.confirm("确认", "确认删除吗？", function (r) {
             if (r) {
-                del(id)
+                $.ajax({
+                    type: 'POST',
+                    url: '/admin/video/delete',
+                    data: JSON.stringify({id: id}),
+                    success: function (data) {
+                        if (!data.ok) {
+                            $.messager.alert("提示", data.msg)
+                            return
+                        }
+                        reload()
+                    },
+                    dataType: 'json',
+                    contentType: "application/json"
+                });
             }
         })
     }
@@ -546,10 +528,8 @@
                 $('#form-add-operation').form('clear');
                 $("#form-add-operation input[name='id']").val(item[0].id)
                 $("#form-add-operation input[name='title']").val(item[0].title)
-                $("#form-add-operation input[name='intro']").val(item[0].intro)
                 $("#form-add-operation input[name='playUrl']").val(item[0].playUrl)
                 $("#form-add-operation input[name='cover']").val(item[0].cover)
-                $("#form-add-operation input[name='duration']").val(item[0].duration)
             },
             buttons: [{
                 text: '确定',

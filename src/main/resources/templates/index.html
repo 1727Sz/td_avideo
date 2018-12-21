@@ -26,24 +26,17 @@
 <!-- end of header -->
 <!-- begin of sidebar -->
 <div class="wu-sidebar" data-options="region:'west',split:true,border:true,title:'导航菜单'">
-    <div class="easyui-accordion" data-options="border:false,fit:true">
-        <div title="用户管理" data-options="iconCls:'icon-application-cascade'" style="padding:5px;">
-            <ul class="easyui-tree wu-side-tree">
-                <li iconCls="icon-users"><a href="javascript:void(0)" data-icon="icon-users"
-                                            data-link="admin/version_.html" iframe="1">用户列表</a></li>
-                <li iconCls="icon-user-group"><a href="javascript:void(0)" data-icon="icon-user-group"
-                                                 data-link="admin/video.html" iframe="1">系统配置</a></li>
-            </ul>
-        </div>
-        <div title="视频管理" data-options="iconCls:'icon-application-form-edit'" style="padding:5px;">
-            <ul class="easyui-tree wu-side-tree">
-                <li iconCls="icon-chart-organisation"><a href="javascript:void(0)" data-icon="icon-chart-organisation"
-                                                         data-link="admin/video.html" iframe="1">视频列表</a></li>
-                <li iconCls="icon-users"><a href="javascript:void(0)" data-icon="icon-users"
-                                            data-link="temp/layout-3.html" iframe="1">评论列表</a></li>
-            </ul>
-        </div>
-    </div>
+    <ul class="easyui-tree wu-side-tree">
+        <li iconCls="icon-users"><a href="javascript:void(0)" data-icon="icon-users"
+                                    data-link="admin/user.html" iframe="1">用户列表</a></li>
+        <li iconCls="icon-user-group"><a href="javascript:void(0)" data-icon="icon-user-group"
+                                         data-link="admin/configuration.html" iframe="1">系统配置</a></li>
+        <li iconCls="icon-chart-organisation"><a href="javascript:void(0)" data-icon="icon-chart-organisation"
+                                                 data-link="admin/video.html" iframe="1">视频列表</a></li>
+        <li iconCls="icon-users"><a href="javascript:void(0)" data-icon="icon-users"
+                                    data-link="admin/comment.html" iframe="1">评论列表</a></li>
+    </ul>
+
 </div>
 <!-- end of sidebar -->
 <!-- begin of main -->
