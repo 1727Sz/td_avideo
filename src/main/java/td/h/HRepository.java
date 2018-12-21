@@ -643,8 +643,13 @@ public class HRepository {
         jdbcTemplate.update("update h.t_user set vipExpireTime = ? where id = ?", expireTime, uid);
     }
 
-    public void syncRechargeWhen(String orderNo){
-
+    public void syncRechargeByNotify(String orderNo) {
+        try {
+            loopRechargeSuccess(orderNo);
+        } catch (Exception e) {
+            log.error("第三方支付平台通知时失败，orderNo={}, e={}", orderNo, e);
+            throw new BizException(18122101, "回调未成功");
+        }
     }
 
 
