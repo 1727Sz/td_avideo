@@ -652,5 +652,30 @@ public class HRepository {
         }
     }
 
+    /**
+     * 最新的版本信息
+     *
+     * @param deviceType
+     * @return
+     */
+    public T_Version getLatestVersion(DeviceType deviceType) {
+        return queryForObject(
+                "select  * from h.t_version where platform = ? and state = 1 order by updateTime desc, createTime desc limit 1",
+                new Object[]{deviceType.getCode()}, new BeanPropertyRowMapper<>(T_Version.class));
+    }
+
+    /**
+     * 版本列表
+     *
+     * @param deviceType
+     * @return
+     */
+    public List<T_Version> listVersion(DeviceType deviceType) {
+        return jdbcTemplate.query(
+                "select * from h.t_version where platform = ? and state = 1 order by updateTime desc, createTime desc",
+                new Object[]{deviceType.getCode()},
+                new BeanPropertyRowMapper<>(T_Version.class));
+    }
+
 
 }

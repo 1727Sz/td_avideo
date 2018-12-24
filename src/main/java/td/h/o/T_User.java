@@ -20,6 +20,8 @@ public class T_User {
     @ApiModelProperty(hidden = true) Date tokenExpireTime;
     @ApiModelProperty(hidden = true) Date createTime;
     @ApiModelProperty(hidden = true) Date vipExpireDate;
+    @ApiModelProperty(hidden = true) int role;
+    @ApiModelProperty(hidden = true) int balance;
 
     public static String showNickname(String nickname, String username) {
         if (!Strings.isEmpty(nickname)) {

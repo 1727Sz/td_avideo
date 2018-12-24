@@ -10,4 +10,5 @@ public interface ApiHeader {
 
     String HK_TOKEN = "token";
     String HK_VERSION = "version";
+    String HK_DEVICE_TYPE = "deviceType";
 }
