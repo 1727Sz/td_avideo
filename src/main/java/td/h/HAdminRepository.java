@@ -89,7 +89,7 @@ public class HAdminRepository {
                 title, cover, playUrl, true, new Date(), id) > 0;
     }
 
-    public boolean updateConfiguration(int yearVipPrice, int quarterVipPrice, int monthVipPrice){
+    public boolean updateConfiguration(int yearVipPrice, int quarterVipPrice, int monthVipPrice) {
         jdbcTemplate.update("delete from t_configuration");
         return jdbcTemplate.update(
                 "insert into t_configuration (monthVipPrice, quarterVipPrice, yearVipPrice) values (?, ?, ?)",
@@ -120,5 +120,46 @@ public class HAdminRepository {
                 new BeanPropertyRowMapper<>(T_Comment.class));
 
         return Pair.with(total, values);
+    }
+
+    public Pair<Long, List<T_Version>> pageVersion(int page, int pageSize) {
+        long total = jdbcTemplate.queryForObject(
+                "select count(1) from h.t_version",
+                Long.class);
+
+        List<T_Version> values = jdbcTemplate.query(
+                "select * from h.t_version order by id desc limit ?, ?",
+                new Object[]{(page - 1) * pageSize, pageSize},
+                new BeanPropertyRowMapper<>(T_Version.class));
+
+        return Pair.with(total, values);
+    }
+
+    public boolean deleteVersion(List<Integer> ids) {
+        String sql = "delete from h.t_version where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
+        return jdbcTemplate.update(sql) > 0;
+    }
+
+    public boolean enableVersion(List<Integer> ids) {
+        String sql = "update h.t_version set state = 1 where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
+        return jdbcTemplate.update(sql) > 0;
+    }
+
+    public boolean disableVersion(List<Integer> ids) {
+        String sql = "update h.t_version set state = 0 where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
+        return jdbcTemplate.update(sql) > 0;
+    }
+
+    public boolean updateVersion(int id, DeviceType deviceType, String version, String lowVersion, String apkUrl, String downloadUrl, String apkSize, String remark, boolean upgrade) {
+        return jdbcTemplate.update(
+                "update h.t_version set platform = ?," +
+                        "versionNo = ?, " +
+                        "lowVersionNo = ?, " +
+                        "apkURL = ?, " +
+                        "downloadUrl = ?, " +
+                        "apkSize = ?, " +
+                        "remark = ?, " +
+                        "upgrade = ? where id = ?",
+                deviceType.getCode(), version, lowVersion, apkUrl, downloadUrl, apkSize, remark, upgrade, id) > 0;
     }
 }

@@ -57,9 +57,10 @@ public class HRepository {
      *
      * @param username
      * @param password
+     * @param refer
      * @return
      */
-    public T_User register(String username, String password) {
+    public T_User register(String username, String password, int refer) {
         // 校验用户名唯一性
         boolean alreadyUsernameExisted = queryForObject(
                 "select count(1) from h.t_user where username = ?", new Object[]{username},
@@ -73,8 +74,8 @@ public class HRepository {
         String nickname = T_User.showNickname("", username);
         //注册
         jdbcTemplate.update(
-                "insert into h.t_user (nickname, username, password, createTime, token, tokenExpireTime) values (?, ?, ?, ?, ?, ?)",
-                nickname, username, password, new Date(), token, tokenExpireTime);
+                "insert into h.t_user (nickname, username, password, createTime, token, tokenExpireTime, registerRefer) values (?, ?, ?, ?, ?, ?, ?)",
+                nickname, username, password, new Date(), token, tokenExpireTime, refer);
 
         // 返回
         T_User user = queryForObject(

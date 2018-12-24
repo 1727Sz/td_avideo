@@ -29,7 +29,7 @@ public class HUserApi {
     @ApiOperation(value = "注册", response = T_User.class)
     public ApiResponse register(@RequestBody UserRegisterRb body) {
 
-        T_User user = hRepository.register(body.getUsername(), body.getPassword());
+        T_User user = hRepository.register(body.getUsername(), body.getPassword(), body.getRefer());
         return new ApiResponse.Ok("", user);
     }
 

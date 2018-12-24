@@ -2,6 +2,8 @@ package td.h.o;
 
 import lombok.Getter;
 
+import java.util.Arrays;
+
 /**
  * @author sanlion do
  */
@@ -12,5 +14,9 @@ public enum DeviceType {
 
     DeviceType(int code) {
         this.code = code;
+    }
+
+    public static DeviceType ofCode(int code){
+        return Arrays.stream(values()).filter(it -> it.getCode() == code).findAny().orElse(Android);
     }
 }

@@ -4,9 +4,12 @@ import com.google.common.base.Strings;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
 
+import java.util.Date;
+
 @Data
 public class T_Version {
 
+    int id;
     int platform;
     String versionNo;
     String lowVersionNo;
@@ -15,13 +18,19 @@ public class T_Version {
     String apkSize;
     String remark;
     boolean upgrade;
-    int numericVersion;
+    Date updateTime;
+    @ApiModelProperty(hidden = true) int state;
 
+    @ApiModelProperty(hidden = true)
     public int getNumericVersion() {
         return Integer.parseInt(this.versionNo.replaceAll("[.]", ""));
     }
 
+    @ApiModelProperty(hidden = true)
     public int getNumericLowVersion() {
+        if (Strings.isNullOrEmpty(this.lowVersionNo)) {
+            return 0;
+        }
         return Integer.parseInt(this.lowVersionNo.replaceAll("[.]", ""));
     }
 

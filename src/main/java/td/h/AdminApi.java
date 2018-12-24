@@ -7,10 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import td.h.o.ApiResponse;
-import td.h.o.T_Comment;
-import td.h.o.T_User;
-import td.h.o.T_Video;
+import td.h.o.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,5 +133,62 @@ public class AdminApi {
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
+    }
+
+    @GetMapping("/version/page")
+    public PageVo pageVersion(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int rows,
+            @RequestParam Map<String, Object> params) {
+        Pair<Long, List<T_Version>> objects = hAdminRepository.pageVersion(page, rows);
+        PageVo pageVo = new PageVo(objects.getValue0());
+        pageVo.getRows().addAll(objects.getValue1());
+        return pageVo;
+    }
+
+    @PostMapping("/version/delete")
+    public OptionVo deleteVersion(@RequestBody Map<String, Object> params) {
+        List<Integer> id = Arrays.stream(String.valueOf(params.get("id")).split(",")).map(Integer::parseInt).collect(Collectors.toList());
+        if (!hAdminRepository.deleteVersion(id)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/version/enable")
+    public OptionVo enableVersion(@RequestBody Map<String, Object> params) {
+        List<Integer> id = Arrays.stream(String.valueOf(params.get("id")).split(",")).map(Integer::parseInt).collect(Collectors.toList());
+        if (!hAdminRepository.enableVersion(id)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/version/disable")
+    public OptionVo disableVersion(@RequestBody Map<String, Object> params) {
+        List<Integer> id = Arrays.stream(String.valueOf(params.get("id")).split(",")).map(Integer::parseInt).collect(Collectors.toList());
+        if (!hAdminRepository.disableVersion(id)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/version/edit")
+    public OptionVo editVersion(@RequestParam Map<String, Object> params) {
+        int id = Integer.parseInt(String.valueOf(params.get("id")));
+        DeviceType platform = DeviceType.ofCode(Integer.parseInt(String.valueOf(params.get("platform"))));
+        String version = String.valueOf(params.get("version"));
+        String lowVersion = String.valueOf(params.get("low_version"));
+        String apkUrl = String.valueOf(params.get("apk"));
+        String downloadUrl = String.valueOf(params.get("download"));
+        String apkSize = String.valueOf(params.get("apkSize"));
+        String remark = String.valueOf(params.get("remark"));
+        boolean upgrade = Boolean.parseBoolean(String.valueOf(params.get("upgrade")));
+
+
+        if (!hAdminRepository.updateVersion(id, platform, version, lowVersion, apkUrl, downloadUrl, apkSize, remark, upgrade)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
     }
 }
