@@ -24,4 +24,8 @@ public class Moneys {
     public static String format_pretty(int cent) {
         return String.format(Currency.getInstance(Locale.CHINA).getSymbol() + "%,.2f", (double) cent / 100);
     }
+
+    public static void main(String[] args) {
+        System.out.println(Moneys.format(-10132312));
+    }
 }

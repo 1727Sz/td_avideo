@@ -162,4 +162,100 @@ public class HAdminRepository {
                         "upgrade = ? where id = ?",
                 deviceType.getCode(), version, lowVersion, apkUrl, downloadUrl, apkSize, remark, upgrade, id) > 0;
     }
+
+    /**
+     * 新增版本记录
+     *
+     * @param deviceType
+     * @param version
+     * @param lowVersion
+     * @param apkUrl
+     * @param downloadUrl
+     * @param apkSize
+     * @param remark
+     * @param upgrade
+     * @return
+     */
+    public boolean addVersion(DeviceType deviceType, String version, String lowVersion, String apkUrl, String downloadUrl, String apkSize, String remark, boolean upgrade) {
+        return jdbcTemplate.update(
+                "insert into h.t_version (platform, versionNo, lowVersionNo, apkURL, downloadUrl, apkSize, remark, upgrade) values " +
+                        "(?, ?, ?, ?, ?, ?, ?, ?)",
+                deviceType.getCode(), version, lowVersion, apkUrl, downloadUrl, apkSize, remark, upgrade) > 0;
+    }
+
+    public Pair<Long, List<T_Refer_User>> pageReferUser(int page, int pageSize) {
+        long total = jdbcTemplate.queryForObject(
+                "select count(1) from h.t_refer_user",
+                Long.class);
+
+        List<T_Refer_User> values = jdbcTemplate.query(
+                "select * from h.t_refer_user order by id desc limit ?, ?",
+                new Object[]{(page - 1) * pageSize, pageSize},
+                new BeanPropertyRowMapper<>(T_Refer_User.class));
+
+        return Pair.with(total, values);
+    }
+
+    public Pair<Long, List<ComplexRefer>> pageComplexRefer(int page, int pageSize) {
+        long total = jdbcTemplate.queryForObject(
+                "select count(1) from t_refer r inner join t_refer_user ru on ru.id = r.ruid",
+                Long.class);
+
+        List<ComplexRefer> values = jdbcTemplate.query(
+                "select r.*, ru.name\n" +
+                        "from t_refer r inner join t_refer_user ru on ru.id = r.ruid\n" +
+                        "order by r.ruid desc, r.id desc\n" +
+                        "limit ?, ?",
+                new Object[]{(page - 1) * pageSize, pageSize},
+                new BeanPropertyRowMapper<>(ComplexRefer.class));
+
+        return Pair.with(total, values);
+    }
+
+    public Pair<Long, List<ComplexRefer>> pageRefer(int page, int pageSize, int ruid) {
+        long total = jdbcTemplate.queryForObject(
+                "select count(1) from t_refer r inner join t_refer_user ru on ru.id = r.ruid\n" +
+                        "where 0 = ? or r.ruid = ?",
+                new Object[]{ruid, ruid},
+                Long.class);
+
+        List<ComplexRefer> values = jdbcTemplate.query(
+                "select r.*, ru.name\n" +
+                        "from t_refer r inner join t_refer_user ru on ru.id = r.ruid\n" +
+                        "where 0 = ? or r.ruid = ?\n" +
+                        "order by r.ruid desc, r.id desc\n" +
+                        "limit ?, ?",
+                new Object[]{ruid, ruid, (page - 1) * pageSize, pageSize},
+                new BeanPropertyRowMapper<>(ComplexRefer.class));
+
+        return Pair.with(total, values);
+    }
+
+    /**
+     * 推广员资金明细
+     *
+     * @param page
+     * @param pageSize
+     * @param ruid
+     * @return
+     */
+    public Pair<Long, List<T_Refer_Fee.ComplexReferFee>> pageReferFee(int page, int pageSize, int ruid) {
+        long total = jdbcTemplate.queryForObject(
+                "select count(1)" +
+                        "from t_refer_fee r inner join t_refer_user ru on ru.id = r.ruid\n" +
+                        "where 0 = ? or r.ruid = ?",
+                new Object[]{ruid, ruid},
+                Long.class);
+
+        List<T_Refer_Fee.ComplexReferFee> values = jdbcTemplate.query(
+                "select r.*, ru.name\n" +
+                        "from t_refer_fee r inner join t_refer_user ru on ru.id = r.ruid\n" +
+                        "where 0 = ? or r.ruid = ?\n" +
+                        "order by r.createTime desc\n" +
+                        "limit ?, ?",
+                new Object[]{ruid, ruid, (page - 1) * pageSize, pageSize},
+                new BeanPropertyRowMapper<>(T_Refer_Fee.ComplexReferFee.class));
+
+        return Pair.with(total, values);
+    }
 }

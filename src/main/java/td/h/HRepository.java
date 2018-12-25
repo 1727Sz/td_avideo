@@ -72,10 +72,14 @@ public class HRepository {
         String token = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
         Date tokenExpireTime = Time.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant());
         String nickname = T_User.showNickname("", username);
-        //注册
+        //注册 <<<< 注册为普通用户
         jdbcTemplate.update(
-                "insert into h.t_user (nickname, username, password, createTime, token, tokenExpireTime, registerRefer) values (?, ?, ?, ?, ?, ?, ?)",
+                "insert into h.t_user (nickname, username, password, createTime, token, tokenExpireTime, registerRefer)" +
+                        " values (?, ?, ?, ?, ?, ?, ?)",
                 nickname, username, password, new Date(), token, tokenExpireTime, refer);
+
+        // 推广渠道同步
+        syncReferCount(refer);
 
         // 返回
         T_User user = queryForObject(
@@ -86,6 +90,10 @@ public class HRepository {
         user.setAvatar(ImagePath.showAvatar(domain, user.getRelativeAvatar()));
 
         return user;
+    }
+
+    public void syncReferCount(int refer){
+
     }
 
     /**
@@ -580,9 +588,11 @@ public class HRepository {
             if (success) {
 
                 // 更新数据库状态
-                jdbcTemplate.update("update t_vip_recharge set payState = ?, payTime = ?", 1, new Date());
+                jdbcTemplate.update("update h.t_vip_recharge set payState = ?, payTime = ?", 1, new Date());
                 // 更新会员到期时间
                 syncUserVipExpireTime(recharge.getUid(), recharge.getVipPlusDay());
+
+                // todo 推广员相关同步
 
                 return true;
             }

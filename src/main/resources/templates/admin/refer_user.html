@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta name="copyright" content="All Rights Reserved, Copyright (C) 2013, Wuyeguo, Ltd."/>
+    <title>推广员</title>
+    <link rel="stylesheet" type="text/css" href="../easyui/1.3.4/themes/default/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/wu.css"/>
+    <link rel="stylesheet" type="text/css" href="../css/icon.css"/>
+    <script type="text/javascript" src="../js/jquery-1.8.0.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/locale/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript" src="../easyui/1.3.4/datagrid-filter.js"></script>
+</head>
+<body>
+<div class="easyui-layout" data-options="fit:true">
+    <!-- Begin of toolbar -->
+    <div id="wu-toolbar-forecast">
+
+        <div class="wu-toolbar-searchForecast" style="display: none;">
+
+            <label>推广员ID（精确匹配）：</label><input id="search_ruid" class="wu-text" style="width:100px">
+
+            <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="clearBox()">重置查询</a>
+        </div>
+
+        <hr/>
+
+        <div class="toolbar-newsList-button">
+            <!--<a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_add_dialog()" plain="true">新增</a>-->
+            <!--<a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_edit_dialog()" plain="true">编辑</a>-->
+            <!--<a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_del_confirm()" plain="true">删除</a>-->
+            <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reload()"
+               plain="true">刷新</a>
+        </div>
+
+    </div>
+    <!-- End of toolbar -->
+    <table id="dg" toolbar="#wu-toolbar-forecast"></table>
+</div>
+
+
+<div id="dialog-operation" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:750px; padding:10px;">
+    <form id="form-add-operation" method="post">
+        <input type="hidden" id="id_operation_add" name="id"/>
+        <table>
+            <tr>
+                <td width="100" align="right">标题:</td>
+                <td><input type="text" name="title" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
+
+            </tr>
+
+            <tr>
+                <td width="100" align="right">播放地址:</td>
+                <td><input type="text" name="playUrl" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
+            </tr>
+            <tr>
+                <td align="right">封面:</td>
+                <td>
+                    <input type="text" name="cover" class="easyui-validatebox" data-options="validType:'url'"
+                           style="width:500px!important;"/>
+                    <span class="l-btn-text icon-search l-btn-icon-left" onclick="showAbbr()"
+                          style="cursor:pointer">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                </td>
+            </tr>
+        </table>
+    </form>
+</div>
+
+<div id="dialog-imaAbbr" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
+     style="width:480px; height:480px;padding:10px;">
+    <div id="abbrList" style="overflow: auto;">
+    </div>
+</div>
+
+
+<!-- End of easyui-dialog -->
+<script type="text/javascript">
+
+
+    // 状态(0-停用，1-启用，-1 删除)
+    var video_state = {
+        0: "待审核",
+        1: "审核通过",
+        2: "审核拒绝"
+    }
+
+    function compareTime(startTime, endTime) {
+        var startTimes = startTime.substring(0, 10).split('-');
+        var endTimes = endTime.substring(0, 10).split('-');
+        startTime = startTimes[1] + '-' + startTimes[2] + '-' + startTimes[0] + ' ' + startTime.substring(10, 19);
+        endTime = endTimes[1] + '-' + endTimes[2] + '-' + endTimes[0] + ' ' + endTime.substring(10, 19);
+        var thisResult = (Date.parse(endTime) - Date.parse(startTime)) / 3600 / 1000;
+        if (thisResult < 0 || thisResult == 0) {
+            return false;
+        } else if (thisResult > 0) {
+            return true;
+        } else {
+            $.messager.alert('信息提示', '时间异常', 'info');
+        }
+    }
+
+    $(document).ready(function () {
+        var begin = new Date();
+        var end = new Date();
+        begin.setMonth(begin.getMonth() - 1);
+        $('#begin').datetimebox('setValue', formatterDate(begin));
+        $('#end').datetimebox('setValue', formatterDate(end));
+
+        $('#dg').datagrid({
+            url: "/admin/referUser/page",
+            method: "get",
+            queryParams: {
+                ruid : $("#referFee").val()
+            },
+            rownumbers: true,  //是否显示行号
+            singleSelect: false,
+            pagination: true,
+            fitColumns: true,
+            pageSize: 20,
+            fit: true,
+            showFooter: true,
+            columns: [[
+                {checkbox: true},
+                {field: 'id', title: 'ID', width: 50, align: 'center'},
+                {field: 'name', title: '名称', width: 100, align: 'center'},
+                {field: 'description', title: '描述', width: 300, align: 'center'},
+                {
+                    field: 'referCount',
+                    title: '推广人数',
+                    width: 150,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return "<span style='color: red;'>" + value + "</span>"
+                    }
+                },
+                {field: 'rate', title: '抽成比例', width: 50, align: 'center'},
+                {field: 'prettyBalance', title: '余额', width: 100, align: 'center'},
+                {
+                    field: 'enable',
+                    title: '启用/禁用',
+                    width: 100,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return value ? "<span style='color: green'>启用</span>" : "<span style='color: red'>禁用</span>"
+                    }
+                },
+                {
+                    field: 'createTime',
+                    title: '创建时间',
+                    width: 200,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return formatterDate(new Date(value))
+                    }
+                },
+            ]]
+        });
+
+    });
+
+    function formatterDate(date) {
+        var day = date.getDate() > 9 ? date.getDate() : "0" + date.getDate();
+        var month = (date.getMonth() + 1) > 9 ? (date.getMonth() + 1) : "0" + (date.getMonth() + 1);
+        var hor = date.getHours();
+        var min = date.getMinutes();
+        var sec = date.getSeconds();
+        var s = date.getFullYear() + '-' + month + '-' + day + " " + hor + ":" + min + ":" + sec;
+        console.log(s)
+        return s;
+    };
+
+
+    /**
+     * 手动刷新表格数据
+     */
+    function reload() {
+        $("#dg").datagrid("reload");
+    }
+
+    function searchsearch() {
+
+        $('#dg').datagrid('load', {
+            "ruid": $("#search_ruid").val()
+        });
+    }
+
+    function clearBox() {
+
+        $("#search_ruid").val("");
+
+        searchsearch()
+    }
+</script>
+
+</body>
+</html>

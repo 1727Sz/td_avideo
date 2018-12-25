@@ -1,5 +1,6 @@
 package td.h;
 
+import com.google.common.base.Strings;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NonNull;
@@ -190,5 +191,70 @@ public class AdminApi {
             return OptionVo.Fail;
         }
         return OptionVo.OK;
+    }
+
+    @PostMapping("/version/add")
+    public OptionVo addVersion(@RequestParam Map<String, Object> params) {
+        DeviceType platform = DeviceType.ofCode(Integer.parseInt(String.valueOf(params.get("platform"))));
+        String version = String.valueOf(params.get("version"));
+        String lowVersion = String.valueOf(params.get("low_version"));
+        String apkUrl = String.valueOf(params.get("apk"));
+        String downloadUrl = String.valueOf(params.get("download"));
+        String apkSize = String.valueOf(params.get("apkSize"));
+        String remark = String.valueOf(params.get("remark"));
+        boolean upgrade = Boolean.parseBoolean(String.valueOf(params.get("upgrade")));
+
+
+        if (!hAdminRepository.addVersion(platform, version, lowVersion, apkUrl, downloadUrl, apkSize, remark, upgrade)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @GetMapping("/referUser/page")
+    public PageVo pageReferUser(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int rows,
+            @RequestParam Map<String, Object> params) {
+        Pair<Long, List<T_Refer_User>> objects = hAdminRepository.pageReferUser(page, rows);
+        PageVo pageVo = new PageVo(objects.getValue0());
+        pageVo.getRows().addAll(objects.getValue1());
+        return pageVo;
+    }
+
+    @GetMapping("/refer/page")
+    public PageVo pageRefer(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int rows,
+            @RequestParam Map<String, Object> params) {
+        int ruid = getRuid(params);
+        Pair<Long, List<ComplexRefer>> objects = hAdminRepository.pageRefer(page, rows, ruid);
+        PageVo pageVo = new PageVo(objects.getValue0());
+        pageVo.getRows().addAll(objects.getValue1());
+        return pageVo;
+    }
+
+    @GetMapping("/referFee/page")
+    public PageVo pageReferFee(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int rows,
+            @RequestParam Map<String, Object> params) {
+        int ruid = getRuid(params);
+        Pair<Long, List<T_Refer_Fee.ComplexReferFee>> objects = hAdminRepository.pageReferFee(page, rows, ruid);
+        PageVo pageVo = new PageVo(objects.getValue0());
+        pageVo.getRows().addAll(objects.getValue1());
+        return pageVo;
+    }
+
+    private int getRuid(Map<String, Object> params) {
+        if (!params.containsKey("ruid")) {
+            return 0;
+        }
+        String value = String.valueOf(params.get("ruid"));
+        if (Strings.isNullOrEmpty(value)) {
+            return 0;
+        }
+
+        return Integer.parseInt(value);
     }
 }

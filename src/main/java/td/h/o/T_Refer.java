@@ -8,7 +8,8 @@ import java.util.Date;
 public class T_Refer {
 
     int id;
-    int uid;
+    int ruid;
     int channel;
     Date createTime;
+    int referCount;
 }
