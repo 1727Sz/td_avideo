@@ -17,9 +17,22 @@
     <!-- Begin of toolbar -->
     <div id="wu-toolbar-forecast">
 
-        <div class="wu-toolbar-searchForecast" style="display: none;">
+        <div class="wu-toolbar-searchForecast">
+            <p>业务说明</p>
+            <ul>
+                <li>在创建推广员时，默认创建该渠道</li>
+                <li>推广员在<span style="color: red;">禁用期间，带来的用户将不进行累计</span>，即使后期解禁，该部分用户也不累计。</li>
+                <li>此处的推广人数为各渠道的人数综合</li>
+                <li>抽成比例，当推广的用户完成充值，会按照该比例进行提成结算。结算时仅按当时的比例进行</li>
+            </ul>
+        </div>
 
-            <label>推广员ID（精确匹配）：</label><input id="search_ruid" class="wu-text" style="width:100px">
+        <div class="wu-toolbar-searchForecast">
+
+
+            <label>推广员ID：</label><input id="search_ruid" class="wu-text" style="width:100px">
+            <label>推广员名称：</label><input id="search_name" class="wu-text" style="width:100px">
+            <label>推广员描述：</label><input id="search_description" class="wu-text" style="width:100px">
 
             <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
             <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="clearBox()">重置查询</a>
@@ -28,9 +41,12 @@
         <hr/>
 
         <div class="toolbar-newsList-button">
-            <!--<a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_add_dialog()" plain="true">新增</a>-->
-            <!--<a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_edit_dialog()" plain="true">编辑</a>-->
-            <!--<a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_del_confirm()" plain="true">删除</a>-->
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_add_dialog()" plain="true">新增</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_edit_dialog()" plain="true">编辑</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_del_confirm()" plain="true">删除</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_enable_confirm()" plain="true">启用/解禁</a>
+            <a href="#" class="easyui-linkbutton" iconCls="icon-remove" onclick="open_disable_confirm()"
+               plain="true">禁用</a>
             <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="reload()"
                plain="true">刷新</a>
         </div>
@@ -44,28 +60,37 @@
 <div id="dialog-operation" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
      style="width:750px; padding:10px;">
     <form id="form-add-operation" method="post">
-        <input type="hidden" id="id_operation_add" name="id"/>
+        <input type="hidden" id="id_add" name="ruid"/>
         <table>
             <tr>
-                <td width="100" align="right">标题:</td>
-                <td><input type="text" name="title" class="easyui-validatebox"
+                <td width="100" align="right">推广员名称:</td>
+                <td><input type="text" id="name_add" name="name" class="easyui-validatebox"
                            data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
 
             </tr>
 
             <tr>
-                <td width="100" align="right">播放地址:</td>
-                <td><input type="text" name="playUrl" class="easyui-validatebox"
+                <td width="100" align="right">推广员描述:</td>
+                <td><input type="text" id="description_add" name="description" class="easyui-validatebox"
                            data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
             </tr>
             <tr>
-                <td align="right">封面:</td>
+                <td width="100" align="right">抽成比例:</td>
                 <td>
-                    <input type="text" name="cover" class="easyui-validatebox" data-options="validType:'url'"
-                           style="width:500px!important;"/>
-                    <span class="l-btn-text icon-search l-btn-icon-left" onclick="showAbbr()"
-                          style="cursor:pointer">&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                    <input type="text" id="rate_add" name="rate" class="easyui-validatebox"
+                           data-options="required:true,validType:length>0"
+                           style="width:50px!important;"/>
                 </td>
+                <td>提示：抽成比例为百分比，如10个点则填写0.1，5个点则是0.05</td>
+            </tr>
+            <td width="100" align="right">状态:</td>
+            <td>
+                <select id="enable_add" class="easyui-combobox" name="enable" panelHeight="auto">
+                    <option value=1 selected="selected">启用</option>
+                    <option value=0>禁用</option>
+                </select>
+            </td>
+
             </tr>
         </table>
     </form>
@@ -105,18 +130,11 @@
     }
 
     $(document).ready(function () {
-        var begin = new Date();
-        var end = new Date();
-        begin.setMonth(begin.getMonth() - 1);
-        $('#begin').datetimebox('setValue', formatterDate(begin));
-        $('#end').datetimebox('setValue', formatterDate(end));
 
         $('#dg').datagrid({
             url: "/admin/referUser/page",
             method: "get",
-            queryParams: {
-                ruid : $("#referFee").val()
-            },
+            queryParams: {},
             rownumbers: true,  //是否显示行号
             singleSelect: false,
             pagination: true,
@@ -126,9 +144,9 @@
             showFooter: true,
             columns: [[
                 {checkbox: true},
-                {field: 'id', title: 'ID', width: 50, align: 'center'},
-                {field: 'name', title: '名称', width: 100, align: 'center'},
-                {field: 'description', title: '描述', width: 300, align: 'center'},
+                {field: 'id', title: '推广员ID', width: 50, align: 'center'},
+                {field: 'name', title: '推广员名称', width: 100, align: 'center'},
+                {field: 'description', title: '推广员描述', width: 300, align: 'center'},
                 {
                     field: 'referCount',
                     title: '推广人数',
@@ -138,6 +156,7 @@
                         return "<span style='color: red;'>" + value + "</span>"
                     }
                 },
+                {field: 'url', title: '推广参数', width: 200, align: 'center'},
                 {field: 'rate', title: '抽成比例', width: 50, align: 'center'},
                 {field: 'prettyBalance', title: '余额', width: 100, align: 'center'},
                 {
@@ -185,16 +204,199 @@
     function searchsearch() {
 
         $('#dg').datagrid('load', {
-            "ruid": $("#search_ruid").val()
+            name: $("#search_name").val(),
+            description: $("#search_description").val(),
+            ruid: $("#search_ruid").val(),
         });
     }
 
     function clearBox() {
 
         $("#search_ruid").val("");
+        $("#search_name").val("");
+        $("#search_description").val("");
 
         searchsearch()
     }
+
+
+    function open_add_dialog() {
+        $('#dialog-operation').dialog({
+            closed: false,
+            modal: true,
+            title: "添加",
+            onOpen: function () {
+                $('#form-add-operation').form('clear');
+                $("#enable_add").combobox("setValue", 1)
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: add
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-operation').dialog('close');
+                }
+            }]
+        });
+    }
+
+    /**
+     * Name 添加记录
+     */
+    function add() {
+        $('#form-add-operation').form('submit', {
+            url: '/admin/referUser/add',
+            success: function (data) {
+                data = JSON.parse(data)
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                $('#dialog-operation').dialog('close');
+                reload()
+            }
+        });
+    }
+
+    function open_edit_dialog() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length != 1) {
+            $.messager.alert("提示", "至少选择一条记录");
+            return
+        }
+        $('#dialog-operation').dialog({
+            closed: false,
+            modal: true,
+            title: "编辑",
+            onOpen: function () {
+                console.log(item[0])
+                $('#form-add-operation').form('clear');
+                $("#id_add").val(item[0].id)
+                $("#name_add").val(item[0].name)
+                $("#description_add").val(item[0].description)
+                $("#rate_add").val(item[0].rate)
+                $("#enable_add").combobox("setValue", item[0].enable)
+            },
+            buttons: [{
+                text: '确定',
+                iconCls: 'icon-ok',
+                handler: edit
+            }, {
+                text: '取消',
+                iconCls: 'icon-cancel',
+                handler: function () {
+                    $('#dialog-operation').dialog('close');
+                }
+            }]
+        });
+    }
+
+    function edit() {
+        $('#form-add-operation').form('submit', {
+            url: '/admin/referUser/edit',
+            success: function (data) {
+                data = JSON.parse(data)
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                $('#dialog-operation').dialog('close');
+                reload()
+            }
+        });
+    }
+
+    function open_del_confirm() {
+        var id = get_selected_ids();
+        console.log(id);
+        $.messager.confirm("确认", "确认删除吗？", function (r) {
+            if (r) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/admin/referUser/delete',
+                    data: JSON.stringify({id: id}),
+                    success: function (data) {
+                        if (!data.ok) {
+                            $.messager.alert("提示", data.msg)
+                            return
+                        }
+                        reload()
+                    },
+                    dataType: 'json',
+                    contentType: "application/json"
+                });
+            }
+        })
+    }
+
+    function open_enable_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认启用吗？", function (r) {
+            if (r) {
+                enable(ids)
+            }
+        })
+    }
+
+    function open_disable_confirm() {
+        var ids = get_selected_ids()
+        $.messager.confirm("确认", "确认禁用吗？", function (r) {
+            if (r) {
+                disable(ids)
+            }
+        })
+    }
+
+    function enable(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/referUser/enable',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function disable(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/admin/referUser/disable',
+            data: JSON.stringify({id: id}),
+            success: function (data) {
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                reload()
+            },
+            dataType: 'json',
+            contentType: "application/json"
+        });
+    }
+
+    function get_selected_ids() {
+        var item = $("#dg").datagrid("getChecked");
+        if (item.length == 0) {
+            $.messager.alert("提示", "至少选择一条视频");
+            return
+        }
+        var ids = ''
+        item.forEach(function (value, index, array) {
+            ids += value.id + ","
+        })
+        return ids
+    }
+
 </script>
 
 </body>

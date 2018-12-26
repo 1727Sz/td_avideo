@@ -1,39 +1,30 @@
 package td.h;
 
-import org.apache.logging.log4j.util.Strings;
+import org.apache.ibatis.session.RowBounds;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import td.h.mapper.*;
 import td.h.o.*;
 
-import java.sql.Time;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Repository
 public class HAdminRepository {
 
-    @Autowired private JdbcTemplate jdbcTemplate;
     @Value("${server.domain}") private String domain;
+    @Autowired private VideoMapper videoMapper;
+    @Autowired private CommentMapper commentMapper;
+    @Autowired private ConfigurationMapper configurationMapper;
+    @Autowired private UserMapper userMapper;
+    @Autowired private VersionMapper versionMapper;
+    @Autowired private VipRechargeMapper vipRechargeMapper;
+    @Autowired private ReferMapper referMapper;
 
-    private <T> T queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
-        try {
-            return jdbcTemplate.queryForObject(sql, args, rowMapper);
-        } catch (DataAccessException e) {
-            return null;
-        }
-    }
-
-    private <T> T queryForObject(String sql, RowMapper<T> rowMapper) {
-        return queryForObject(sql, new Object[]{}, rowMapper);
-    }
 
     /**
      * 视频列表
@@ -41,126 +32,89 @@ public class HAdminRepository {
      * @param page
      * @param pageSize
      */
-    public Pair<Long, List<T_Video>> pageVideo(int page, int pageSize) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1) from h.t_video",
-                Long.class);
-
-        List<T_Video> values = jdbcTemplate.query(
-                "select * from h.t_video order by id desc limit ?, ?",
-                new Object[]{(page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Video.class));
-
+    public Pair<Long, List<T_Video>> pageVideo(Map<String, Object> params, int page, int pageSize) {
+        long total = videoMapper.count(params);
+        List<T_Video> values = videoMapper.adminPage(params, new RowBounds((page - 1) * pageSize, pageSize));
         return Pair.with(total, values);
-    }
-
-
-    /**
-     * 配置
-     *
-     * @return
-     */
-    public T_Configuration getConfiguration() {
-        return queryForObject(
-                "select * from h.t_configuration",
-                new Object[]{},
-                new BeanPropertyRowMapper<>(T_Configuration.class));
     }
 
     public boolean deleteVideo(List<Integer> ids) {
-        String sql = "delete from h.t_video where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
-        return jdbcTemplate.update(sql) > 0;
+        return videoMapper.delete(ids);
     }
 
     public boolean deleteComment(List<Integer> ids) {
-        String sql = "delete from h.t_comment where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
-        return jdbcTemplate.update(sql) > 0;
+        return commentMapper.delete(ids);
     }
 
     public boolean addVideo(String title, String cover, String playUrl) {
-        return jdbcTemplate.update(
-                "insert into h.t_video (title, cover, playUrl) values (?, ?, ?)"
-                , title, cover, playUrl) > 0;
+        Map<String, Object> params = new HashMap<>();
+        params.put("title", title);
+        params.put("cover", cover);
+        params.put("playUrl", playUrl);
+        return videoMapper.gte(params);
     }
 
     public boolean updateVideo(int id, String title, String cover, String playUrl) {
-        return jdbcTemplate.update(
-                "update h.t_video set title = ?, cover = ?, playUrl = ?, enable = ?, updateTime = ? where id = ?",
-                title, cover, playUrl, true, new Date(), id) > 0;
+        Map<String, Object> params = new HashMap<>();
+        params.put("title", title);
+        params.put("cover", cover);
+        params.put("playUrl", playUrl);
+        params.put("id", id);
+        params.put("updateTime", new Date());
+        params.put("enable", true);
+        return videoMapper.update(params);
     }
 
     public boolean updateConfiguration(int yearVipPrice, int quarterVipPrice, int monthVipPrice) {
-        jdbcTemplate.update("delete from t_configuration");
-        return jdbcTemplate.update(
-                "insert into t_configuration (monthVipPrice, quarterVipPrice, yearVipPrice) values (?, ?, ?)",
-                monthVipPrice, quarterVipPrice, yearVipPrice) > 0;
+        configurationMapper.delete();
+        return configurationMapper.save(new T_Configuration(monthVipPrice, quarterVipPrice, yearVipPrice));
     }
 
-    public Pair<Long, List<T_User>> pageUser(int page, int pageSize) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1) from h.t_user",
-                Long.class);
-
-        List<T_User> values = jdbcTemplate.query(
-                "select * from h.t_user order by id desc limit ?, ?",
-                new Object[]{(page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_User.class));
+    public Pair<Long, List<T_User>> pageUser(Map<String, Object> params, int page, int pageSize) {
+        long total = userMapper.count(params);
+        List<T_User> values = userMapper.adminPage(params, new RowBounds((page - 1) * pageSize, pageSize));
 
         return Pair.with(total, values);
     }
 
-    public Pair<Long, List<T_Comment>> pageComment(int page, int pageSize) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1) from h.t_comment",
-                Long.class);
-
-        List<T_Comment> values = jdbcTemplate.query(
-                "select * from h.t_comment order by id desc limit ?, ?",
-                new Object[]{(page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Comment.class));
+    public Pair<Long, List<T_Comment>> pageComment(Map<String, Object> params, int page, int pageSize) {
+        long total = commentMapper.countComment(params);
+        List<T_Comment> values = commentMapper.adminPage(params, new RowBounds((page - 1) * pageSize, pageSize));
 
         return Pair.with(total, values);
     }
 
-    public Pair<Long, List<T_Version>> pageVersion(int page, int pageSize) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1) from h.t_version",
-                Long.class);
-
-        List<T_Version> values = jdbcTemplate.query(
-                "select * from h.t_version order by id desc limit ?, ?",
-                new Object[]{(page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Version.class));
+    public Pair<Long, List<T_Version>> pageVersion(Map<String, Object> params, int page, int pageSize) {
+        long total = versionMapper.countVersion(params);
+        List<T_Version> values = versionMapper.pageVersion(params, new RowBounds((page - 1) * pageSize, pageSize));
 
         return Pair.with(total, values);
     }
 
     public boolean deleteVersion(List<Integer> ids) {
-        String sql = "delete from h.t_version where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
-        return jdbcTemplate.update(sql) > 0;
+        return versionMapper.delete(ids);
     }
 
     public boolean enableVersion(List<Integer> ids) {
-        String sql = "update h.t_version set state = 1 where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
-        return jdbcTemplate.update(sql) > 0;
+        return versionMapper.enable(ids);
     }
 
     public boolean disableVersion(List<Integer> ids) {
-        String sql = "update h.t_version set state = 0 where id in (" + ids.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
-        return jdbcTemplate.update(sql) > 0;
+        return versionMapper.disable(ids);
     }
 
     public boolean updateVersion(int id, DeviceType deviceType, String version, String lowVersion, String apkUrl, String downloadUrl, String apkSize, String remark, boolean upgrade) {
-        return jdbcTemplate.update(
-                "update h.t_version set platform = ?," +
-                        "versionNo = ?, " +
-                        "lowVersionNo = ?, " +
-                        "apkURL = ?, " +
-                        "downloadUrl = ?, " +
-                        "apkSize = ?, " +
-                        "remark = ?, " +
-                        "upgrade = ? where id = ?",
-                deviceType.getCode(), version, lowVersion, apkUrl, downloadUrl, apkSize, remark, upgrade, id) > 0;
+        Map<String, Object> params = new HashMap<>();
+        params.put("platform", deviceType.getCode());
+        params.put("versionNo", version);
+        params.put("lowVersionNo", lowVersion);
+        params.put("apkURL", apkUrl);
+        params.put("downloadUrl", downloadUrl);
+        params.put("apkSize", apkSize);
+        params.put("remark", remark);
+        params.put("upgrade", upgrade);
+        params.put("id", id);
+        return versionMapper.update(params);
     }
 
     /**
@@ -177,56 +131,28 @@ public class HAdminRepository {
      * @return
      */
     public boolean addVersion(DeviceType deviceType, String version, String lowVersion, String apkUrl, String downloadUrl, String apkSize, String remark, boolean upgrade) {
-        return jdbcTemplate.update(
-                "insert into h.t_version (platform, versionNo, lowVersionNo, apkURL, downloadUrl, apkSize, remark, upgrade) values " +
-                        "(?, ?, ?, ?, ?, ?, ?, ?)",
-                deviceType.getCode(), version, lowVersion, apkUrl, downloadUrl, apkSize, remark, upgrade) > 0;
+        Map<String, Object> params = new HashMap<>();
+        params.put("platform", deviceType.getCode());
+        params.put("versionNo", version);
+        params.put("lowVersionNo", lowVersion);
+        params.put("apkURL", apkUrl);
+        params.put("downloadUrl", downloadUrl);
+        params.put("apkSize", apkSize);
+        params.put("remark", remark);
+        params.put("upgrade", upgrade);
+        return versionMapper.add(params);
     }
 
-    public Pair<Long, List<T_Refer_User>> pageReferUser(int page, int pageSize) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1) from h.t_refer_user",
-                Long.class);
-
-        List<T_Refer_User> values = jdbcTemplate.query(
-                "select * from h.t_refer_user order by id desc limit ?, ?",
-                new Object[]{(page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Refer_User.class));
+    public Pair<Long, List<T_Refer_User>> pageReferUser(Map<String, Object> params, int page, int pageSize) {
+        long total = referMapper.countReferUser(params);
+        List<T_Refer_User> values = referMapper.pageReferUser(params, new RowBounds((page - 1) * pageSize, pageSize));
 
         return Pair.with(total, values);
     }
 
-    public Pair<Long, List<ComplexRefer>> pageComplexRefer(int page, int pageSize) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1) from t_refer r inner join t_refer_user ru on ru.id = r.ruid",
-                Long.class);
-
-        List<ComplexRefer> values = jdbcTemplate.query(
-                "select r.*, ru.name\n" +
-                        "from t_refer r inner join t_refer_user ru on ru.id = r.ruid\n" +
-                        "order by r.ruid desc, r.id desc\n" +
-                        "limit ?, ?",
-                new Object[]{(page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(ComplexRefer.class));
-
-        return Pair.with(total, values);
-    }
-
-    public Pair<Long, List<ComplexRefer>> pageRefer(int page, int pageSize, int ruid) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1) from t_refer r inner join t_refer_user ru on ru.id = r.ruid\n" +
-                        "where 0 = ? or r.ruid = ?",
-                new Object[]{ruid, ruid},
-                Long.class);
-
-        List<ComplexRefer> values = jdbcTemplate.query(
-                "select r.*, ru.name\n" +
-                        "from t_refer r inner join t_refer_user ru on ru.id = r.ruid\n" +
-                        "where 0 = ? or r.ruid = ?\n" +
-                        "order by r.ruid desc, r.id desc\n" +
-                        "limit ?, ?",
-                new Object[]{ruid, ruid, (page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(ComplexRefer.class));
+    public Pair<Long, List<ComplexRefer>> pageComplexRefer(Map<String, Object> params, int page, int pageSize) {
+        long total = referMapper.countComplexRefer(params);
+        List<ComplexRefer> values = referMapper.pageComplexRefer(params, new RowBounds((page - 1) * pageSize, pageSize));
 
         return Pair.with(total, values);
     }
@@ -236,26 +162,35 @@ public class HAdminRepository {
      *
      * @param page
      * @param pageSize
-     * @param ruid
      * @return
      */
-    public Pair<Long, List<T_Refer_Fee.ComplexReferFee>> pageReferFee(int page, int pageSize, int ruid) {
-        long total = jdbcTemplate.queryForObject(
-                "select count(1)" +
-                        "from t_refer_fee r inner join t_refer_user ru on ru.id = r.ruid\n" +
-                        "where 0 = ? or r.ruid = ?",
-                new Object[]{ruid, ruid},
-                Long.class);
-
-        List<T_Refer_Fee.ComplexReferFee> values = jdbcTemplate.query(
-                "select r.*, ru.name\n" +
-                        "from t_refer_fee r inner join t_refer_user ru on ru.id = r.ruid\n" +
-                        "where 0 = ? or r.ruid = ?\n" +
-                        "order by r.createTime desc\n" +
-                        "limit ?, ?",
-                new Object[]{ruid, ruid, (page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Refer_Fee.ComplexReferFee.class));
+    public Pair<Long, List<T_Refer_Fee.ComplexReferFee>> pageReferFee(Map<String, Object> params, int page, int pageSize) {
+        long total = referMapper.countComplexReferFee(params);
+        List<T_Refer_Fee.ComplexReferFee> values = referMapper.pageComplexReferFee(params, new RowBounds((page - 1) * pageSize, pageSize));
 
         return Pair.with(total, values);
+    }
+
+    public boolean addReferUser(Map<String, Object> params) {
+        params.put("createTime", new Date());
+        params.put("enable", Integer.parseInt(String.valueOf(params.getOrDefault("enable", 0))));
+        return referMapper.addReferUser(params);
+    }
+
+    public boolean updateReferUser(Map<String, Object> params) {
+        params.put("enable", Integer.parseInt(String.valueOf(params.getOrDefault("enable", 0))));
+        return referMapper.updateReferUser(params);
+    }
+
+    public boolean deleteReferUser(List<Integer> id) {
+        return referMapper.deleteReferUser(id);
+    }
+
+    public boolean enableReferUser(List<Integer> id) {
+        return referMapper.enableReferUser(id);
+    }
+
+    public boolean disableReferUser(List<Integer> id) {
+        return referMapper.disableReferUser(id);
     }
 }

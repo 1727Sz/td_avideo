@@ -7,14 +7,12 @@ import okhttp3.FormBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.apache.ibatis.session.RowBounds;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.dao.DataAccessException;
-import org.springframework.jdbc.core.BeanPropertyRowMapper;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import td.h.mapper.*;
 import td.h.o.*;
 
 import java.io.IOException;
@@ -30,26 +28,17 @@ import java.util.stream.Collectors;
 @Repository
 public class HRepository {
 
-    @Autowired private JdbcTemplate jdbcTemplate;
     @Value("${server.domain}") private String domain;
     @Autowired private OkHttpClient okHttpClient;
+    @Autowired private UserMapper userMapper;
+    @Autowired private CommentMapper commentMapper;
+    @Autowired private VideoMapper videoMapper;
+    @Autowired private ConfigurationMapper configurationMapper;
+    @Autowired private VipRechargeMapper vipRechargeMapper;
+    @Autowired private VersionMapper versionMapper;
+    @Autowired private LikeMapper likeMapper;
 
-    private <T> T queryForObject(String sql, Object[] args, RowMapper<T> rowMapper) {
-        try {
-            return jdbcTemplate.queryForObject(sql, args, rowMapper);
-        } catch (DataAccessException e) {
-            return null;
-        }
-    }
 
-    private <T> T queryForObject(String sql, Object[] args, Class<T> targetType) {
-        try {
-            return jdbcTemplate.queryForObject(sql, args, targetType);
-        } catch (DataAccessException e) {
-            log.error("jdbc 执行失败，e={}", e);
-            return null;
-        }
-    }
 
 
     /**
@@ -62,9 +51,7 @@ public class HRepository {
      */
     public T_User register(String username, String password, int refer) {
         // 校验用户名唯一性
-        boolean alreadyUsernameExisted = queryForObject(
-                "select count(1) from h.t_user where username = ?", new Object[]{username},
-                Boolean.class);
+        boolean alreadyUsernameExisted = userMapper.alreadyUsernameExisted(username);
         if (alreadyUsernameExisted) {
             throw new BizException(18121701, "用户名已存在");
         }
@@ -73,26 +60,28 @@ public class HRepository {
         Date tokenExpireTime = Time.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant());
         String nickname = T_User.showNickname("", username);
         //注册 <<<< 注册为普通用户
-        jdbcTemplate.update(
-                "insert into h.t_user (nickname, username, password, createTime, token, tokenExpireTime, registerRefer)" +
-                        " values (?, ?, ?, ?, ?, ?, ?)",
-                nickname, username, password, new Date(), token, tokenExpireTime, refer);
 
+        Map<String, Object> params = new HashMap<>();
+        params.put("nickname", nickname);
+        params.put("username", username);
+        params.put("password", password);
+        params.put("createTime", new Date());
+        params.put("token", token);
+        params.put("tokenExpireTime", tokenExpireTime);
+        params.put("registerRefer", refer);
+        userMapper.createNewUser(params);
         // 推广渠道同步
         syncReferCount(refer);
 
         // 返回
-        T_User user = queryForObject(
-                "select * from h.t_user where token = ?",
-                new Object[]{token},
-                new BeanPropertyRowMapper<>(T_User.class));
+        T_User user = getUserByToken(token);
 
         user.setAvatar(ImagePath.showAvatar(domain, user.getRelativeAvatar()));
 
         return user;
     }
 
-    public void syncReferCount(int refer){
+    public void syncReferCount(int refer) {
 
     }
 
@@ -109,11 +98,11 @@ public class HRepository {
         if (!user.getPassword().equalsIgnoreCase(password)) {
             throw new BizException(18121702, "请输入正确的原密码");
         }
-        jdbcTemplate.update("update h.t_user set password = ? where id = ?",
-                newPassword, user.getId());
+
+        userMapper.updatePassword(user.getId(), newPassword);
 
         // 清空token，强制重新登陆
-        jdbcTemplate.update("update h.t_user set token = null, tokenExpireTime = now() where id = ?", user.getId());
+        userMapper.clearToken(user.getId());
     }
 
     /**
@@ -125,8 +114,7 @@ public class HRepository {
     public void updateAvatar(String token, String avatar) {
 
         T_User user = getUserByToken(token);
-        jdbcTemplate.update("update h.t_user set relativeAvatar = ? where id = ?",
-                new Object[]{avatar, user.getId()});
+        userMapper.updateAvatar(user.getId(), avatar);
     }
 
     /**
@@ -139,8 +127,7 @@ public class HRepository {
 
         T_User user = getUserByToken(token);
         nickname = T_User.showNickname(nickname, user.getUsername());
-        jdbcTemplate.update("update h.t_user set nickname = ? where id = ?",
-                nickname, user.getId());
+        userMapper.updateNickname(user.getId(), nickname);
     }
 
 
@@ -153,10 +140,7 @@ public class HRepository {
      */
     public T_User login(String username, String password) {
 
-        T_User user = queryForObject(
-                "select * from h.t_user where username = ?",
-                new Object[]{username},
-                new BeanPropertyRowMapper<>(T_User.class));
+        T_User user = userMapper.getByUsername(username);
         if (Objects.isNull(user)) {
             throw new BizException(18121703, "账户不存在或密码错误");
         }
@@ -169,13 +153,10 @@ public class HRepository {
         String token = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
         Date tokenExpireTime = Time.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant());
         //注册
-        jdbcTemplate.update(
-                "update h.t_user set token = ?, tokenExpireTime = ? where id = ?",
-                new Object[]{token, tokenExpireTime, user.getId()});
+        userMapper.updateToken(token, tokenExpireTime, user.getId());
 
         // 返回
-        user = queryForObject("select * from h.t_user where token = ?", new Object[]{token},
-                new BeanPropertyRowMapper<>(T_User.class));
+        user = userMapper.getByToken(token);
 
         user.setAvatar(ImagePath.showAvatar(domain, user.getRelativeAvatar()));
         return user;
@@ -191,9 +172,7 @@ public class HRepository {
         if (Strings.isEmpty(token)) {
             throw new BizException(17031701);
         }
-        T_User user = queryForObject(
-                "select * from h.t_user where token = ? and tokenExpireTime > now()",
-                new Object[]{token}, new BeanPropertyRowMapper<>(T_User.class));
+        T_User user = userMapper.getByTokenWithValid(token, new Date());
 
         if (Objects.isNull(user)) {
             throw new BizException(17031702, "您的登录状态已过期，请重新登录");
@@ -205,9 +184,7 @@ public class HRepository {
     }
 
     public T_User getUserById(int uid) {
-        T_User user = queryForObject(
-                "select * from h.t_user where id = ?",
-                new Object[]{uid}, new BeanPropertyRowMapper<>(T_User.class));
+        T_User user = userMapper.getById(uid);
 
         if (Objects.isNull(user)) {
             throw new BizException(17031702, "您的登录状态已过期，请重新登录");
@@ -241,9 +218,13 @@ public class HRepository {
      */
     public void comment(int vid, String token, String content) {
         T_User user = getUserByToken(token);
-        jdbcTemplate.update(
-                "insert into h.t_comment (content, target, uid, nickname, avatar) values (?, ?, ?, ?, ?)",
-                content, vid, user.getId(), user.getNickname(), user.getRelativeAvatar());
+        Map<String, Object> params = new HashMap<>();
+        params.put("content", content);
+        params.put("target", vid);
+        params.put("uid", user.getId());
+        params.put("nickname", user.getNickname());
+        params.put("avatar", user.getRelativeAvatar());
+        commentMapper.comment(params);
 
         syncVideoComments(vid);
     }
@@ -254,9 +235,7 @@ public class HRepository {
      * @param vid
      */
     private void syncVideoComments(int vid) {
-        jdbcTemplate.update(
-                "update h.t_video set comments = (select count(1) from h.t_comment c where c.target = ?) where id = ?",
-                new Object[]{vid, vid});
+        commentMapper.syncVideoComments(vid);
     }
 
     /**
@@ -268,10 +247,13 @@ public class HRepository {
     public void deleteComment(int cid, String token) {
         T_User user = getUserByToken(token);
         int uid = user.getId();
-        int vid = queryForObject(
-                "select target from h.t_comment where id = ?", new Object[]{cid},
-                Integer.class);
-        jdbcTemplate.update("delete from h.t_comment where id = ? and uid = ?", new Object[]{cid, uid});
+
+        if (!commentMapper.deleteComment(cid, uid)) {
+            return;
+        }
+
+        T_Comment comment = commentMapper.getCommentById(cid);
+        int vid = comment.getVid();
         syncVideoComments(vid);
     }
 
@@ -286,13 +268,9 @@ public class HRepository {
             throw new BizException(18121709, "已赞过~");
         }
         T_User user = getUserByToken(token);
-        jdbcTemplate.update(
-                "insert into h.t_like (uid, target) values (?, ?)",
-                new Object[]{user.getId(), vid});
+        likeMapper.like(vid, user.getId());
 
-        jdbcTemplate.update(
-                "update h.t_video set likes = (select count(1) from h.t_like c where c.target = ?) where id = ?",
-                new Object[]{vid, vid});
+        likeMapper.syncLikes(vid);
     }
 
     /**
@@ -304,10 +282,7 @@ public class HRepository {
      */
     public boolean alreadyVideoLiked(String token, int vid) {
         T_User user = getUserByToken(token);
-        return queryForObject(
-                "select count(1) from h.t_like where uid = ? and target = ?",
-                new Object[]{user.getId(), vid},
-                Boolean.class);
+        return likeMapper.alreadyLiked(vid, user.getId());
     }
 
     /**
@@ -323,10 +298,7 @@ public class HRepository {
 
         int uid = getUidByTokenWithoutCheck(token);
 
-        return jdbcTemplate.query(
-                "select * from h.t_comment where target = ? order by createTime desc limit ?, ?",
-                new Object[]{vid, (page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Comment.class))
+        return commentMapper.page(vid, new RowBounds((page - 1) * pageSize, pageSize))
                 .stream()
                 .peek(it -> it.setZj(uid == it.getUid()))
                 .peek(it -> it.setAvatar(ImagePath.showAvatar(domain, it.getAvatar())))
@@ -340,10 +312,7 @@ public class HRepository {
      * @param pageSize
      */
     public List<T_Video> pageVideo(int page, int pageSize) {
-        return jdbcTemplate.query(
-                "select * from h.t_video where enable = true order by updateTime desc limit ?, ?",
-                new Object[]{(page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Video.class));
+        return videoMapper.page(new RowBounds((page - 1) * pageSize, pageSize));
     }
 
     /**
@@ -359,10 +328,7 @@ public class HRepository {
         if (uid == 0) {
             return Collections.emptyList();
         }
-        return jdbcTemplate.query(
-                "select * from h.t_video v inner join h.t_follow_video fv on fv.target = v.id and fv.uid = ? order by fv.createTime desc limit ?, ?",
-                new Object[]{uid, (page - 1) * pageSize, pageSize},
-                new BeanPropertyRowMapper<>(T_Video.class))
+        return videoMapper.pageFollowed(uid, new RowBounds((page - 1) * pageSize, pageSize))
                 .stream()
                 .peek(it -> {
                     it.setPlayUrl("成为VIP会员后可永久免费观看海量视频");
@@ -380,10 +346,7 @@ public class HRepository {
      */
     public boolean alreadyFollowed(String token, int vid) {
         T_User user = getUserByToken(token);
-        return queryForObject(
-                "select count(1) from h.t_follow_video where uid = ? and target = ?",
-                new Object[]{user.getId(), vid},
-                Boolean.class);
+        return videoMapper.alreadyFollowed(user.getId(), vid);
     }
 
     /**
@@ -397,8 +360,7 @@ public class HRepository {
         if (alreadyFollowed(token, vid)) {
             throw new BizException(18121707, "无需重复关注");
         }
-        jdbcTemplate.update("insert into h.t_follow_video (target, uid) values (?, ?)",
-                vid, user.getId());
+        videoMapper.follow(user.getId(), vid);
     }
 
     /**
@@ -409,8 +371,7 @@ public class HRepository {
      */
     public void followCancelVideo(String token, int vid) {
         T_User user = getUserByToken(token);
-        jdbcTemplate.update("delete from h.t_follow_video where target = ? and uid = ?",
-                new Object[]{vid, user.getId()});
+        videoMapper.followCancel(user.getId(), vid);
     }
 
     /**
@@ -422,10 +383,7 @@ public class HRepository {
      */
     public T_Video getVideoDetailById(String token, int vid) {
         T_User user = getUserByToken(token);
-        T_Video video = queryForObject(
-                "select * from h.t_video where id = ? and enable = true",
-                new Object[]{vid},
-                new BeanPropertyRowMapper<>(T_Video.class));
+        T_Video video = videoMapper.getEnabledVideoById(vid);
         if (Objects.isNull(video)) {
             throw new BizException(18121706, "视频资源异常，请稍后再试");
         }
@@ -446,10 +404,7 @@ public class HRepository {
      * @return
      */
     public T_Configuration getConfiguration() {
-        return queryForObject(
-                "select * from h.t_configuration",
-                new Object[]{},
-                new BeanPropertyRowMapper<>(T_Configuration.class));
+        return configurationMapper.getConfig();
     }
 
     @Value("${pay.api.gte}") private String gtePayApi;
@@ -552,13 +507,18 @@ public class HRepository {
         String orderNo = generateOrderNo(user.getId());
         String payUrl = gtePayScheme(totalFee, goodsName, orderNo, now);
 
-        // 支付订单入库
-        jdbcTemplate.update(
-                "insert into h.t_vip_recharge " +
-                        "(orderNo, uid, fee, createTime, goodsName, vipPlusDay, payState, payExpireTime, payUrl) " +
-                        "values " +
-                        "(?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                orderNo, user.getId(), totalFee, now, goodsName, day, 0, payExpireTime, payUrl);
+        Map<String, Object> params = new HashMap<>();
+        params.put("orderNo", orderNo);
+        params.put("uid", user.getId());
+        params.put("fee", totalFee);
+        params.put("createTime", now);
+        params.put("goodsName", goodsName);
+        params.put("vipPlusDay", day);
+        params.put("payState", 0);
+        params.put("payExpireTime", payExpireTime);
+        params.put("payUrl", payUrl);
+
+        vipRechargeMapper.gte(params);
 
         return new RechargeVo(orderNo, payUrl);
     }
@@ -570,10 +530,7 @@ public class HRepository {
      * @return
      */
     public boolean loopRechargeSuccess(String orderNo) {
-        T_VipRecharge recharge = queryForObject(
-                "select * from h.t_vip_recharge where orderNo = ?",
-                new Object[]{orderNo},
-                new BeanPropertyRowMapper<>(T_VipRecharge.class));
+        T_VipRecharge recharge = vipRechargeMapper.getByOrderNo(orderNo);
         if (Objects.isNull(recharge)) {
             throw new BizException(18122004, "充值订单不存在");
         }
@@ -588,7 +545,7 @@ public class HRepository {
             if (success) {
 
                 // 更新数据库状态
-                jdbcTemplate.update("update h.t_vip_recharge set payState = ?, payTime = ?", 1, new Date());
+                vipRechargeMapper.updateRechargeState(orderNo, 1, new Date());
                 // 更新会员到期时间
                 syncUserVipExpireTime(recharge.getUid(), recharge.getVipPlusDay());
 
@@ -651,7 +608,7 @@ public class HRepository {
                 )
                         .toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         Date expireTime = Date.from(vipExpireLocalDateTime.plusDays(day).atZone(ZoneId.systemDefault()).toInstant());
-        jdbcTemplate.update("update h.t_user set vipExpireTime = ? where id = ?", expireTime, uid);
+        vipRechargeMapper.updateVipExpire(uid, expireTime);
     }
 
     public void syncRechargeByNotify(String orderNo) {
@@ -670,9 +627,7 @@ public class HRepository {
      * @return
      */
     public T_Version getLatestVersion(DeviceType deviceType) {
-        return queryForObject(
-                "select  * from h.t_version where platform = ? and state = 1 order by updateTime desc, createTime desc limit 1",
-                new Object[]{deviceType.getCode()}, new BeanPropertyRowMapper<>(T_Version.class));
+        return versionMapper.getLatestVersion(deviceType.getCode());
     }
 
     /**
@@ -682,10 +637,7 @@ public class HRepository {
      * @return
      */
     public List<T_Version> listVersion(DeviceType deviceType) {
-        return jdbcTemplate.query(
-                "select * from h.t_version where platform = ? and state = 1 order by updateTime desc, createTime desc",
-                new Object[]{deviceType.getCode()},
-                new BeanPropertyRowMapper<>(T_Version.class));
+        return versionMapper.listVersion(deviceType.getCode());
     }
 
 

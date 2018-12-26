@@ -58,19 +58,19 @@
     <form id="form-add-operation" method="post">
         <table>
             <tr>
-                <td width="100" align="right">月卡单价（分）:</td>
+                <td width="100" align="right">月卡单价:</td>
                 <td><input type="text" name="monthVipPrice" class="easyui-validatebox"
                            data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
 
             </tr>
 
             <tr>
-                <td width="100" align="right">季卡单价（分）:</td>
+                <td width="100" align="right">季卡单价:</td>
                 <td><input type="text" name="quarterVipPrice" class="easyui-validatebox"
                            data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
             </tr>
             <tr>
-                <td align="right">年卡单价（分）:</td>
+                <td align="right">年卡单价:</td>
                 <td>
                     <input type="text" name="yearVipPrice" class="easyui-validatebox"
                            data-options="required:true,validType:length>0"
@@ -102,9 +102,9 @@
             showFooter: true,
             columns: [[
                 {checkbox: true},
-                {field: 'monthVipPrice', title: '月卡单价（分）', width: 200, align: 'center'},
-                {field: 'quarterVipPrice', title: '季卡单价（分）', width: 200, align: 'center'},
-                {field: 'yearVipPrice', title: '年卡单价（分）', width: 200, align: 'center'},
+                {field: 'prettyMonthVipPrice', title: '月卡单价', width: 200, align: 'center'},
+                {field: 'prettyQuarterVipPrice', title: '季卡单价', width: 200, align: 'center'},
+                {field: 'prettyYearVipPrice', title: '年卡单价', width: 200, align: 'center'},
             ]]
         });
 
@@ -169,9 +169,9 @@
             title: "编辑",
             onOpen: function () {
                 $('#form-add-operation').form('clear');
-                $("#form-add-operation input[name='monthVipPrice']").val(item[0].monthVipPrice)
-                $("#form-add-operation input[name='quarterVipPrice']").val(item[0].quarterVipPrice)
-                $("#form-add-operation input[name='yearVipPrice']").val(item[0].yearVipPrice)
+                $("#form-add-operation input[name='monthVipPrice']").val(item[0].prettyMonthVipPrice)
+                $("#form-add-operation input[name='quarterVipPrice']").val(item[0].prettyQuarterVipPrice)
+                $("#form-add-operation input[name='yearVipPrice']").val(item[0].prettyYearVipPrice)
             },
             buttons: [{
                 text: '确定',

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="td.h.mapper.VipRechargeMapper">
+
+
+    <insert id="gte">
+        insert into h.t_vip_recharge
+        (orderNo, uid, fee, createTime, goodsName, vipPlusDay, payState, payExpireTime, payUrl)
+        values
+            (#{orderNo}, #{uid}, #{fee}, #{createTime}, #{goodsName}, #{vipPlusDay}, #{payState}, #{payExpireTime},
+             #{payUrl})
+    </insert>
+    <update id="updateRechargeState">
+        update h.t_vip_recharge
+        set payState = ?, payTime = ?
+        where orderNo = #{orderNo}
+    </update>
+    <update id="updateVipExpire">
+        update h.t_user
+        set vipExpireTime = #{vipExpireTime}
+        where id = #{id}
+    </update>
+    <select id="getByOrderNo" resultType="td.h.o.T_VipRecharge">
+        select *
+        from h.t_vip_recharge
+        where orderNo = #{_parameter}
+    </select>
+</mapper>

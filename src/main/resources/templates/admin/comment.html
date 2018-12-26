@@ -17,29 +17,19 @@
     <!-- Begin of toolbar -->
     <div id="wu-toolbar-forecast">
 
-        <div class="wu-toolbar-searchForecast" style="display: none;">
-            <label>评论类型:</label>
-            <select id="type" class="easyui-combobox" name="platform" panelHeight="auto" style="width:60px;">
-                <option value="1" selected="selected">资讯</option>
-                <option value="2">视频</option>
-                <option value="3">预测</option>
-            </select>
+        <div class="wu-toolbar-searchForecast">
+
             <label>创建时间:</label>
-            <input class="easyui-datetimebox" id="begin" name="startDate"
+            <input class="easyui-datetimebox" id="search_createtime_begin" name="startDate"
                    data-options="showSeconds:true" style="width:150px">
             -
-            <input class="easyui-datetimebox" id="end" name="endDate"
+            <input class="easyui-datetimebox" id="search_createtime_end" name="endDate"
                    data-options="showSeconds:true" style="width:150px">
-            <label>用户ID：</label><input id="uid" class="wu-text" style="width:100px">
-            <label>用户昵称：</label><input id="nickname" class="wu-text" style="width:100px">
-            <label>评论内容：</label><input id="comment" class="wu-text" style="width:100px">
-            <label>状态:</label>
-            <select id="state" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
-                <option value="" selected="selected">全部</option>
-                <option value="0">待审核</option>
-                <option value="1">审核通过</option>
-                <option value="2">审核拒绝</option>
-            </select>
+            <label>用户ID：</label><input id="search_uid" class="wu-text" style="width:100px">
+            <label>用户昵称：</label><input id="search_nickname" class="wu-text" style="width:100px">
+            <label>评论内容：</label><input id="search_content" class="wu-text" style="width:100px">
+            <label>视频ID：</label><input id="search_target" class="wu-text" style="width:100px">
+
 
 
             <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
@@ -91,16 +81,15 @@
         var begin = new Date();
         var end = new Date();
         begin.setMonth(begin.getMonth() - 1);
-        $('#begin').datetimebox('setValue', formatterDate(begin));
-        $('#end').datetimebox('setValue', formatterDate(end));
+        $('#search_createtime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_createtime_end').datetimebox('setValue', formatterDate(end));
 
         $('#dg').datagrid({
             url: "/admin/comment/page",
             method: "get",
             queryParams: {
-                targetType: $("#type").val(),
-                createTime_begin: $("#begin").datetimebox("getValue"),
-                createTime_end: $("#end").datetimebox("getValue")
+                createTime_begin: $("#search_createtime_begin").datetimebox("getValue"),
+                createTime_end: $("#search_createtime_end").datetimebox("getValue")
             },
             rownumbers: true,  //是否显示行号
             singleSelect: false,
@@ -116,6 +105,15 @@
                 {field: 'nickname', title: '用户昵称', width: 100, align: 'center'},
                 {field: 'target', title: '评论视频ID', width: 50, align: 'center'},
                 {field: 'content', title: '评论内容', width: 500, align: 'center'},
+                {
+                    field: 'createTime',
+                    title: '创建时间',
+                    width: 100,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        return formatterDate(new Date(value))
+                    }
+                },
             ]]
         });
 
@@ -144,8 +142,8 @@
      * 根据条件查询
      */
     function searchsearch() {
-        var begin = $("#begin").datetimebox("getValue");
-        var end = $("#end").datetimebox("getValue");
+        var begin = $("#search_createtime_begin").datetimebox("getValue");
+        var end = $("#search_createtime_end").datetimebox("getValue");
         if ((begin.length != 0 && end.length == 0) || (begin.length == 0 && end.length != 0)) {
             $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
             return;
@@ -155,28 +153,26 @@
             return;
         }
         $('#dg').datagrid('load', {
-            "targetType": $("#type").combobox("getValue"),
-            "userID": $("#uid").val(),
-            "userNickname": $("#nickname").val(),
-            "comment": $("#comment").val(),
-            "state": $("#state").combobox("getValue"),
-            "createTime_begin": begin,
-            "createTime_end": end
+            "uid": $("#search_uid").val(),
+            "nickname": $("#search_nickname").val(),
+            "content": $("#search_content").val(),
+            "target": $("#search_target").val(),
+            "createTimeBegin": begin,
+            "createTimeEnd": end
         });
     }
 
     function clearBox() {
-        $("#uid").val("");
-        $("#nickname").val("");
-        $("#comment").val("");
-        $("#state").combobox("setValue", '');
-        $("#type").combobox("setValue", '1');
+        $("#search_uid").val("");
+        $("#search_nickname").val("");
+        $("#search_content").val("");
+        $("#search_target").val("");
 
         var begin = new Date();
         var end = new Date();
         begin.setMonth(begin.getMonth() - 1);
-        $('#begin').datetimebox('setValue', formatterDate(begin));
-        $('#end').datetimebox('setValue', formatterDate(end));
+        $('#search_createtime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_createtime_end').datetimebox('setValue', formatterDate(end));
         searchsearch()
     }
 

@@ -16,6 +16,7 @@ public class T_Refer_User {
     int balance;
     Date createTime;
     boolean enable;
+    String url;
 
     public String getPrettyBalance(){
         return Moneys.format(this.balance);

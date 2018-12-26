@@ -17,22 +17,16 @@
     <!-- Begin of toolbar -->
     <div id="wu-toolbar-forecast">
 
-        <div class="wu-toolbar-searchForecast" style="display: none">
+        <div class="wu-toolbar-searchForecast">
             <label>创建时间:</label>
-            <input class="easyui-datetimebox" id="begin" name="startDate"
+            <input class="easyui-datetimebox" id="search_createtime_begin" name="startDate"
                    data-options="showSeconds:true" style="width:150px">
             -
-            <input class="easyui-datetimebox" id="end" name="endDate"
+            <input class="easyui-datetimebox" id="search_createtime_end" name="endDate"
                    data-options="showSeconds:true" style="width:150px">
-            <label>标题：</label><input id="title" class="wu-text" style="width:100px">
-            <label>简介：</label><input id="intro" class="wu-text" style="width:100px">
-            <label>状态:</label>
-            <select id="state" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
-                <option value="" selected="selected">全部</option>
-                <option value="0">待审核</option>
-                <option value="1">审核通过</option>
-                <option value="2">审核拒绝</option>
-            </select>
+            <label>用户ID：</label><input id="search_uid" class="wu-text" style="width:100px">
+            <label>用户名：</label><input id="search_username" class="wu-text" style="width:100px">
+            <label>用户昵称：</label><input id="search_nickname" class="wu-text" style="width:100px">
 
 
             <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
@@ -122,15 +116,15 @@
         var begin = new Date();
         var end = new Date();
         begin.setMonth(begin.getMonth() - 1);
-        $('#begin').datetimebox('setValue', formatterDate(begin));
-        $('#end').datetimebox('setValue', formatterDate(end));
+        $('#search_createtime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_createtime_end').datetimebox('setValue', formatterDate(end));
 
         $('#dg').datagrid({
             url: "/admin/user/page",
             method: "get",
             queryParams: {
-                createTime_begin: $("#begin").datetimebox("getValue"),
-                createTime_end: $("#end").datetimebox("getValue")
+                createTime_begin: $("#search_createtime_begin").datetimebox("getValue"),
+                createTime_end: $("#search_createtime_end").datetimebox("getValue")
             },
             rownumbers: true,  //是否显示行号
             singleSelect: false,
@@ -142,19 +136,10 @@
             columns: [[
                 {checkbox: true},
                 {field: 'id', title: 'ID', width: 50, align: 'center'},
+                {field: 'username', title: '用户名', width: 100, align: 'center'},
                 {field: 'nickname', title: '昵称', width: 100, align: 'center'},
                 {field: 'relativeAvatar', title: '头像', width: 300, align: 'center'},
                 {field: 'password', title: '密码', width: 150, align: 'center'},
-                {field: 'token', title: '登陆令牌', width: 300, align: 'center'},
-                {
-                    field: 'tokenExpireTime',
-                    title: '登陆令牌有效期',
-                    width: 200,
-                    align: 'center',
-                    formatter: function (value, row, index) {
-                        return value ? formatterDate(new Date(value)) : "未登录"
-                    }
-                },
                 {
                     field: 'vipExpireTime',
                     title: '会员有效期',
@@ -195,6 +180,39 @@
      */
     function reload() {
         $("#dg").datagrid("reload");
+    }
+
+    function searchsearch() {
+        var begin = $("#search_createtime_begin").datetimebox("getValue");
+        var end = $("#search_createtime_end").datetimebox("getValue");
+        if ((begin.length != 0 && end.length == 0) || (begin.length == 0 && end.length != 0)) {
+            $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
+            return;
+        }
+        if (begin.length != 0 && end.length != 0 && !compareTime(begin, end)) {
+            $.messager.alert('信息提示', '开始日期不能大于结束日期', 'info');
+            return;
+        }
+        $('#dg').datagrid('load', {
+            "uid": $("#search_uid").val(),
+            "nickname": $("#search_nickname").val(),
+            "username": $("#search_username").val(),
+            "createTimeBegin": begin,
+            "createTimeEnd": end
+        });
+    }
+
+    function clearBox() {
+        $("#search_uid").val("");
+        $("#search_username").val("");
+        $("#search_nickname").val("");
+
+        var begin = new Date();
+        var end = new Date();
+        begin.setMonth(begin.getMonth() - 1);
+        $('#search_createtime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_createtime_end').datetimebox('setValue', formatterDate(end));
+        searchsearch()
     }
 
 </script>

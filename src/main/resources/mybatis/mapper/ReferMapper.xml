@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="td.h.mapper.ReferMapper">
+    <insert id="addReferUser" useGeneratedKeys="true" keyProperty="id">
+        insert into h.t_refer_user
+        (name, description, rate, createTime, enable) VALUES
+            (
+                #{name}, #{description}, #{rate}, #{createTime}, #{enable}
+            )
+    </insert>
+    <insert id="gteDefaultRefer">
+        insert into h.t_refer (ruid, channel, createTime) VALUES (#{ruid}, #{channel}, #{createTime})
+    </insert>
+    <update id="updateReferUser">
+        update h.t_refer_user
+        set name        = #{name},
+            description = #{description},
+            rate        = #{rate},
+            enable      = #{enable}
+        where id = #{ruid}
+    </update>
+
+    <update id="enableReferUser">
+        update h.t_refer_user set enable = true where id in
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </update>
+
+    <update id="disableReferUser">
+        update h.t_refer_user set enable = false where id in
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </update>
+
+    <delete id="deleteReferUser">
+        delete from h.t_refer_user where id in
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </delete>
+
+
+    <select id="pageReferUser" resultType="td.h.o.T_Refer_User">
+        select * from h.t_refer_user
+        <include refid="query"/>
+        order by id desc
+    </select>
+
+    <select id="countReferUser" resultType="java.lang.Long">
+        select count(1) from h.t_refer_user
+        <include refid="query"/>
+    </select>
+
+    <sql id="query">
+        <where>
+            <if test="ruid != null and ruid!=''">and id = #{ruid}</if>
+            <if test="name != null and name!=''">and name like concat('%', #{name},'%')</if>
+            <if test="description != null and description!=''">and description like concat('%', #{description},'%')</if>
+        </where>
+    </sql>
+
+    <select id="pageComplexRefer" resultType="td.h.o.ComplexRefer">
+        select * from t_refer r inner join t_refer_user ru on ru.id = r.ruid
+        <include refid="complexReferQuery"/>
+        order by r.ruid desc, r.id desc
+    </select>
+
+    <select id="countComplexRefer" resultType="java.lang.Long">
+        select count(1) from t_refer r inner join t_refer_user ru on ru.id = r.ruid
+        <include refid="complexReferQuery"/>
+    </select>
+
+    <sql id="complexReferQuery">
+        <where>
+            <if test="channel != null and channel!=''">and r.channel = #{channel}</if>
+            <if test="ruid != null and ruid!=''">and r.ruid = #{ruid}</if>
+            <if test="name != null and name!=''">and ru.name like concat('%', #{name},'%')</if>
+            <if test="createTimeBegin != null and createTimeBegin!=''">and r.createTime &gt; #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd!=''">and r.createTime &lt; #{createTimeEnd}</if>
+        </where>
+    </sql>
+
+    <select id="pageComplexReferFee" resultType="td.h.o.T_Refer_Fee$ComplexReferFee">
+        select * from t_refer_fee r inner join t_refer_user ru on ru.id = r.ruid
+        <include refid="complexReferFeeQuery"/>
+        order by r.createTime desc
+    </select>
+
+    <select id="countComplexReferFee" resultType="java.lang.Long">
+        select count(1) from t_refer_fee r inner join t_refer_user ru on ru.id = r.ruid
+        <include refid="complexReferFeeQuery"/>
+    </select>
+
+    <sql id="complexReferFeeQuery">
+        <where>
+            <if test="sourceType != null and sourceType!=''">and r.sourceType = #{sourceType}</if>
+            <if test="ruid != null and ruid!=''">and r.ruid = #{ruid}</if>
+            <if test="name != null and name!=''">and ru.name like concat('%', #{name},'%')</if>
+            <if test="createTimeBegin != null and createTimeBegin!=''">and r.createTime &gt; #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd!=''">and r.createTime &lt; #{createTimeEnd}</if>
+        </where>
+    </sql>
+
+</mapper>

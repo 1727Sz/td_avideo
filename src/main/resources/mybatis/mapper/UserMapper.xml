@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="td.h.mapper.UserMapper">
+    <insert id="createNewUser">
+        insert into h.t_user (nickname, username, password, createTime, token, tokenExpireTime, registerRefer)
+        values
+            (#{nickname}, #{username}, #{password}, #{createTime}, #{token}, #{tokenExpireTime}, #{registerRefer})
+    </insert>
+    <update id="updatePassword">
+        update h.t_user
+        set password = #{password}
+        where id = #{id}
+    </update>
+    <update id="clearToken">
+        update h.t_user
+        set token = null, tokenExpireTime = now()
+        where id = #{_parameter}
+    </update>
+    <update id="updateAvatar">
+        update h.t_user
+        set relativeAvatar = #{relativeAvatar}
+        where id = #{id}
+    </update>
+    <update id="updateNickname">
+        update h.t_user
+        set nickname = #{nickname}
+        where id = #{id}
+    </update>
+    <update id="updateToken">
+        update h.t_user
+        set token = #{token}, tokenExpireTime = #{tokenExpireTime}
+        where id = #{id}
+    </update>
+
+
+    <select id="alreadyUsernameExisted" resultType="java.lang.Boolean">
+        select count(1)
+        from h.t_user
+        where username = #{_parameter}
+    </select>
+    <select id="getByToken" resultType="td.h.o.T_User">
+        select *
+        from h.t_user
+        where token = #{_parameter}
+    </select>
+
+    <select id="getByTokenWithValid" resultType="td.h.o.T_User">
+        select *
+        from h.t_user
+        where token = #{token} and tokenExpireTime > #{tokenExpireTime}
+    </select>
+    <select id="getById" resultType="td.h.o.T_User">
+        select *
+        from h.t_user
+        where id = #{_parameter}
+    </select>
+    <select id="getByUsername" resultType="td.h.o.T_User">
+        select *
+        from h.t_user
+        where username = #{_parameter}
+    </select>
+
+
+    <select id="adminPage" resultType="td.h.o.T_User">
+        select * from h.t_user
+        <include refid="query"/>
+        order by id desc
+    </select>
+
+    <select id="count" resultType="java.lang.Integer">
+        select count(1) from h.t_user
+        <include refid="query"/>
+    </select>
+
+    <sql id="query">
+        <where>
+            <if test="uid != null and uid!=''">and id = #{uid}</if>
+            <if test="nickname != null and nickname!=''">and nickname like concat('%', #{nickname},'%')</if>
+            <if test="username != null and username!=''">and username like concat('%', #{username},'%')</if>
+            <if test="createTimeBegin != null and createTimeBegin!=''">and createTime &gt; #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd!=''">and createTime &lt; #{createTimeEnd}</if>
+        </where>
+    </sql>
+
+</mapper>

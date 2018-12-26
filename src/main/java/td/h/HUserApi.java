@@ -82,11 +82,6 @@ public class HUserApi {
         return new ApiResponse.Ok("", new UploadVo(path.showPath(domain), path.relativePath()));
     }
 
-    @GetMapping("/config")
-    @ApiOperation(value = "获取系统配置", response = T_Configuration.class)
-    public ApiResponse getConfiguration() {
-        return new ApiResponse.Ok("", hRepository.getConfiguration());
-    }
 
     @PostMapping("/vip/recharge")
     @ApiOperation(value = "会员充值，生成支付订单", response = ApiResponse.Ok.class)

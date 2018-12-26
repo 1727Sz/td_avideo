@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="td.h.mapper.CommentMapper">
+
+
+    <insert id="comment">
+        insert into h.t_comment (content, target, uid, nickname, avatar)
+        values
+            (#{content}, #{target}, #{uid}, #{nickname}, #{avatar})
+    </insert>
+    <update id="syncVideoComments">
+        update h.t_video
+        set comments = (select count(1)
+                        from h.t_comment c
+                        where c.target = #{_parameter})
+        where id = #{_parameter}
+    </update>
+    <delete id="deleteComment">
+        delete from h.t_comment
+        where id = #{id} and uid = #{uid}
+    </delete>
+    <delete id="delete">
+        delete from h.t_comment where id in
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </delete>
+    <select id="getCommentById" resultType="td.h.o.T_Comment">
+        select *
+        from h.t_comment
+        where id = #{_parameter}
+    </select>
+    <select id="page" resultType="td.h.o.T_Comment">
+        select *
+        from h.t_comment
+        where target = #{target}
+        order by createTime desc
+    </select>
+
+    <select id="adminPage" resultType="td.h.o.T_Comment">
+        select * from h.t_comment
+        <include refid="query"/>
+        order by id desc
+    </select>
+
+    <select id="countComment" resultType="java.lang.Long">
+        select count(1) from h.t_comment
+        <include refid="query"/>
+    </select>
+
+    <sql id="query">
+        <where>
+            <if test="content != null and content!=''">and content like concat('%', #{content},'%')</if>
+            <if test="nickname != null and nickname!=''">and nickname like concat('%', #{nickname},'%')</if>
+            <if test="uid != null and uid!=''">uid = #{uid}</if>
+            <if test="target != null and target!=''">target = #{target}</if>
+            <if test="createTimeBegin != null and createTimeBegin!=''">and createTime &gt; #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd!=''">and createTime &lt; #{createTimeEnd}</if>
+        </where>
+    </sql>
+</mapper>

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="td.h.mapper.VersionMapper">
+    <insert id="add">
+        insert into h.t_version
+        (platform, versionNo, lowVersionNo, apkURL, downloadUrl, apkSize, remark, upgrade)
+        values
+            (
+                #{platform}, #{versionNo}, #{lowVersionNo}, #{apkURL}, #{downloadUrl}, #{apkSize}, #{remark}, #{upgrade}
+            )
+    </insert>
+    <update id="enable">
+        update h.t_version set state = 1 where id
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </update>
+    <update id="disable">
+        update h.t_version set state = 0 where id
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </update>
+    <update id="update">
+        update h.t_version
+        set platform     = #{platform},
+            versionNo    = #{versionNo},
+            lowVersionNo = #{lowVersionNo},
+            apkURL       = #{apkURL},
+            downloadUrl  = #{downloadUrl},
+            apkSize      = #{apkSize},
+            remark       = #{remark},
+            upgrade      = #{upgrade}
+        where id = #{id}
+    </update>
+    <delete id="delete">
+        delete from h.t_version where id in
+        <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </delete>
+
+
+    <select id="getLatestVersion" resultType="td.h.o.T_Version">
+        select *
+        from h.t_version
+        where platform = #{_parameter} and state = 1
+        order by updateTime desc, createTime desc
+        limit 1
+    </select>
+    <select id="listVersion" resultType="td.h.o.T_Version">
+        select *
+        from h.t_version
+        where platform = #{_parameter} and state = 1
+        order by updateTime desc, createTime desc
+    </select>
+
+    <select id="pageVersion" resultType="td.h.o.T_Version">
+        select * from h.t_version
+        <include refid="query"/>
+        order by id desc
+    </select>
+
+    <select id="countVersion" resultType="java.lang.Long">
+        select count(1) from h.t_version
+        <include refid="query"/>
+    </select>
+
+    <sql id="query">
+        <where>
+
+        </where>
+    </sql>
+</mapper>

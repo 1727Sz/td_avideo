@@ -12,4 +12,5 @@ public class T_Refer {
     int channel;
     Date createTime;
     int referCount;
+    String url;
 }

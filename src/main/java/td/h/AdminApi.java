@@ -49,7 +49,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        Pair<Long, List<T_Video>> objects = hAdminRepository.pageVideo(page, rows);
+        Pair<Long, List<T_Video>> objects = hAdminRepository.pageVideo(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
@@ -96,10 +96,13 @@ public class AdminApi {
 
     @PostMapping("/configuration/edit")
     public OptionVo editConfiguration(@RequestParam Map<String, Object> params) {
-        int monthVipPrice = Integer.parseInt(String.valueOf(params.get("monthVipPrice")));
-        int quarterVipPrice = Integer.parseInt(String.valueOf(params.get("quarterVipPrice")));
-        int yearVipPrice = Integer.parseInt(String.valueOf(params.get("yearVipPrice")));
-        if (!hAdminRepository.updateConfiguration(yearVipPrice, quarterVipPrice, monthVipPrice)) {
+        float monthVipPrice = Float.parseFloat(String.valueOf(params.get("monthVipPrice")));
+        float quarterVipPrice = Float.parseFloat(String.valueOf(params.get("quarterVipPrice")));
+        float yearVipPrice = Float.parseFloat(String.valueOf(params.get("yearVipPrice")));
+        if (!hAdminRepository.updateConfiguration(
+                ((int) (yearVipPrice * 100)),
+                ((int) (quarterVipPrice * 100)),
+                ((int) (monthVipPrice * 100)))) {
             return OptionVo.Fail;
         }
         return OptionVo.OK;
@@ -110,7 +113,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        Pair<Long, List<T_User>> objects = hAdminRepository.pageUser(page, rows);
+        Pair<Long, List<T_User>> objects = hAdminRepository.pageUser(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
@@ -130,7 +133,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        Pair<Long, List<T_Comment>> objects = hAdminRepository.pageComment(page, rows);
+        Pair<Long, List<T_Comment>> objects = hAdminRepository.pageComment(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
@@ -141,7 +144,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        Pair<Long, List<T_Version>> objects = hAdminRepository.pageVersion(page, rows);
+        Pair<Long, List<T_Version>> objects = hAdminRepository.pageVersion(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
@@ -216,7 +219,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        Pair<Long, List<T_Refer_User>> objects = hAdminRepository.pageReferUser(page, rows);
+        Pair<Long, List<T_Refer_User>> objects = hAdminRepository.pageReferUser(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
@@ -227,8 +230,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        int ruid = getRuid(params);
-        Pair<Long, List<ComplexRefer>> objects = hAdminRepository.pageRefer(page, rows, ruid);
+        Pair<Long, List<ComplexRefer>> objects = hAdminRepository.pageComplexRefer(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
@@ -240,7 +242,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
         int ruid = getRuid(params);
-        Pair<Long, List<T_Refer_Fee.ComplexReferFee>> objects = hAdminRepository.pageReferFee(page, rows, ruid);
+        Pair<Long, List<T_Refer_Fee.ComplexReferFee>> objects = hAdminRepository.pageReferFee(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
@@ -256,5 +258,48 @@ public class AdminApi {
         }
 
         return Integer.parseInt(value);
+    }
+
+    @PostMapping("/referUser/add")
+    public OptionVo addReferUser(@RequestParam Map<String, Object> params) {
+        if (!hAdminRepository.addReferUser(params)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/referUser/edit")
+    public OptionVo editReferUser(@RequestParam Map<String, Object> params) {
+        if (!hAdminRepository.updateReferUser(params)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/referUser/delete")
+    public OptionVo deleteReferUser(@RequestBody Map<String, Object> params) {
+        List<Integer> id = Arrays.stream(String.valueOf(params.get("id")).split(",")).map(Integer::parseInt).collect(Collectors.toList());
+        if (!hAdminRepository.deleteReferUser(id)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/referUser/enable")
+    public OptionVo enableReferUser(@RequestBody Map<String, Object> params) {
+        List<Integer> id = Arrays.stream(String.valueOf(params.get("id")).split(",")).map(Integer::parseInt).collect(Collectors.toList());
+        if (!hAdminRepository.enableReferUser(id)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/referUser/disable")
+    public OptionVo disableReferUser(@RequestBody Map<String, Object> params) {
+        List<Integer> id = Arrays.stream(String.valueOf(params.get("id")).split(",")).map(Integer::parseInt).collect(Collectors.toList());
+        if (!hAdminRepository.disableReferUser(id)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
     }
 }

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="td.h.mapper.LikeMapper">
+    <insert id="like">
+        insert into h.t_like (uid, target) values (#{uid}, #{target})
+    </insert>
+    <update id="syncLikes">
+        update h.t_video
+        set likes = (select count(1)
+                     from h.t_like c
+                     where c.target = #{_parameter})
+        where id = #{_parameter}
+    </update>
+
+
+    <select id="alreadyLiked" resultType="java.lang.Boolean">
+        select count(1)
+        from h.t_like
+        where uid = #{uid} and target = #{target}
+    </select>
+</mapper>
