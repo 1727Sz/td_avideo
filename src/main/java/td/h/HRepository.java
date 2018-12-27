@@ -609,9 +609,9 @@ public class HRepository {
         Date now = new Date();
         LocalDateTime vipExpireLocalDateTime =
                 (
-                        Objects.nonNull(user.getVipExpireDate())
-                                && user.getVipExpireDate().after(now)
-                                ? user.getVipExpireDate() : now
+                        Objects.nonNull(user.getVipExpireTime())
+                                && user.getVipExpireTime().after(now)
+                                ? user.getVipExpireTime() : now
                 )
                         .toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         return new RechargePreviewVo(getConfiguration(), vipExpireLocalDateTime);
@@ -647,9 +647,9 @@ public class HRepository {
         Date now = new Date();
         LocalDateTime vipExpireLocalDateTime =
                 (
-                        Objects.nonNull(user.getVipExpireDate())
-                                && user.getVipExpireDate().after(now)
-                                ? user.getVipExpireDate() : now
+                        Objects.nonNull(user.getVipExpireTime())
+                                && user.getVipExpireTime().after(now)
+                                ? user.getVipExpireTime() : now
                 )
                         .toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         Date expireTime = Date.from(vipExpireLocalDateTime.plusDays(day).atZone(ZoneId.systemDefault()).toInstant());

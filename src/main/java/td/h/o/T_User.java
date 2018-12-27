@@ -19,7 +19,7 @@ public class T_User {
     @ApiModelProperty("登陆令牌") String token;
     @ApiModelProperty(hidden = true) Date tokenExpireTime;
     @ApiModelProperty(hidden = true) Date createTime;
-    @ApiModelProperty(hidden = true) Date vipExpireDate;
+    @ApiModelProperty(hidden = true) Date vipExpireTime;
     @ApiModelProperty(hidden = true) int registerRefer;
 
     public String getSelfNickname(){
@@ -38,11 +38,11 @@ public class T_User {
 
     @ApiModelProperty("是否会员")
     public boolean isVip() {
-        return Objects.nonNull(this.vipExpireDate) && this.vipExpireDate.after(new Date());
+        return Objects.nonNull(this.vipExpireTime) && this.vipExpireTime.after(new Date());
     }
 
     @ApiModelProperty("会员有效期")
     public String getVipExpireDay() {
-        return Times.format(this.vipExpireDate, "yyyy-MM-dd");
+        return Times.format(this.vipExpireTime, "yyyy-MM-dd");
     }
 }
