@@ -1,6 +1,7 @@
 package td.h.o;
 
 import lombok.Data;
+import td.h.Moneys;
 
 import java.util.Date;
 
@@ -17,4 +18,8 @@ public class T_VipRecharge {
     Date payExpireTime;
     Date payTime;
     String payUrl;
+
+    public String getPrettyFee(){
+        return Moneys.format(this.fee);
+    }
 }

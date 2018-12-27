@@ -22,6 +22,13 @@ public class T_User {
     @ApiModelProperty(hidden = true) Date vipExpireDate;
     @ApiModelProperty(hidden = true) int registerRefer;
 
+    public String getSelfNickname(){
+        if (!Strings.isEmpty(this.nickname)) {
+            return this.nickname;
+        }
+        return this.username;
+    }
+
     public static String showNickname(String nickname, String username) {
         if (!Strings.isEmpty(nickname)) {
             return nickname;

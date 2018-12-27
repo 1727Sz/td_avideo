@@ -22,9 +22,42 @@
         set vipExpireTime = #{vipExpireTime}
         where id = #{id}
     </update>
+    <update id="expire">
+        update h.t_vip_recharge set payState = -1 where payState = 0 and payExpireTime &lt;= now()
+    </update>
     <select id="getByOrderNo" resultType="td.h.o.T_VipRecharge">
         select *
         from h.t_vip_recharge
         where orderNo = #{_parameter}
     </select>
+
+
+    <select id="adminPage" resultType="td.h.o.ComplexVipRecharge">
+        select
+        r.*,
+        u.nickname,
+        u.username
+        from t_vip_recharge r inner join t_user u on u.id = r.uid
+        <include refid="query"/>
+        order by r.createTime desc
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1)
+        from t_vip_recharge r inner join t_user u on u.id = r.uid
+        <include refid="query"/>
+    </select>
+
+    <sql id="query">
+        <where>
+            <if test="uid != null and uid!=''">and uid = #{uid}</if>
+            <if test="nickname != null and nickname!=''">and u.nickname like concat('%', #{nickname},'%')</if>
+            <if test="orderNo != null and orderNo!=''">and r.orderNo like concat('%', #{orderNo},'%')</if>
+            <if test="username != null and username!=''">and u.username like concat('%', #{username},'%')</if>
+            <if test="goodsName != null and goodsName!=''">and r.goodsName like concat('%', #{goodsName},'%')</if>
+            <if test="createTimeBegin != null and createTimeBegin!=''">and r.createTime &gt; #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd!=''">and r.createTime &lt; #{createTimeEnd}</if>
+            <if test="payState != null and payState !=''">and r.payState = #{payState}</if>
+        </where>
+    </sql>
 </mapper>

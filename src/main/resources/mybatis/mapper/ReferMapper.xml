@@ -13,6 +13,20 @@
     <insert id="gteDefaultRefer">
         insert into h.t_refer (ruid, channel, createTime) VALUES (#{ruid}, #{channel}, #{createTime})
     </insert>
+    <insert id="operateFee">
+        insert into h.t_refer_fee (
+            ruid, source, sourceType, sourceValue, value, createTime, description, rate)
+        values (
+            #{ruid}, 0, #{sourceType}, #{sourceValue}, #{value}, #{createTime}, #{description}, 0
+        )
+    </insert>
+    <insert id="createReferUserFee">
+        insert into h.t_refer_fee (
+            ruid, source, sourceType, sourceValue, value, createTime, description, rate)
+        values (
+            #{ruid}, #{source}, #{sourceType}, #{sourceValue}, #{value}, #{createTime}, #{description}, #{rate}
+        )
+    </insert>
     <update id="updateReferUser">
         update h.t_refer_user
         set name        = #{name},
@@ -30,6 +44,14 @@
     <update id="disableReferUser">
         update h.t_refer_user set enable = false where id in
         <foreach collection="list" index="index" item="item" open="(" separator="," close=")">#{item}</foreach>
+    </update>
+
+    <update id="syncReferUserBalance">
+        update h.t_refer_user
+        set balance = (select ifnull(sum(value), 0)
+                       from h.t_refer_fee
+                       where ruid = #{_parameter})
+        where id = #{_parameter}
     </update>
 
     <delete id="deleteReferUser">
@@ -88,11 +110,27 @@
         select count(1) from t_refer_fee r inner join t_refer_user ru on ru.id = r.ruid
         <include refid="complexReferFeeQuery"/>
     </select>
+    <select id="getReferUserById" resultType="td.h.o.T_Refer_User">
+        select *
+        from h.t_refer_user
+        where id = #{_parameter}
+    </select>
 
     <sql id="complexReferFeeQuery">
         <where>
             <if test="sourceType != null and sourceType!=''">and r.sourceType = #{sourceType}</if>
+            <if test="direction != null and direction!=''">
+                <if test="direction == 1">
+                    and r.value &gt; 0
+                </if>
+                <if test="direction == 2">
+                    and r.value &lt; 0
+                </if>
+            </if>
+            <if test="id != null and id!=''">and r.id = #{id}</if>
             <if test="ruid != null and ruid!=''">and r.ruid = #{ruid}</if>
+            <if test="description != null and description!=''">and r.description like concat('%', #{description},'%')
+            </if>
             <if test="name != null and name!=''">and ru.name like concat('%', #{name},'%')</if>
             <if test="createTimeBegin != null and createTimeBegin!=''">and r.createTime &gt; #{createTimeBegin}</if>
             <if test="createTimeEnd != null and createTimeEnd!=''">and r.createTime &lt; #{createTimeEnd}</if>

@@ -4,6 +4,7 @@ import org.apache.ibatis.session.RowBounds;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Repository;
 import td.h.mapper.*;
 import td.h.o.*;
@@ -192,5 +193,37 @@ public class HAdminRepository {
 
     public boolean disableReferUser(List<Integer> id) {
         return referMapper.disableReferUser(id);
+    }
+
+
+    public Pair<Long, List<ComplexVipRecharge>> pageVipRecharge(Map<String, Object> params, int page, int pageSize) {
+        long total = vipRechargeMapper.count(params);
+        List<ComplexVipRecharge> values = vipRechargeMapper.adminPage(params, new RowBounds((page - 1) * pageSize, pageSize));
+
+        return Pair.with(total, values);
+    }
+
+    public boolean operateReferUserFee(Map<String, Object> params) {
+        int ruid = Integer.parseInt(String.valueOf(params.getOrDefault("ruid", "0")));
+        int fee = ((int) (Float.parseFloat(String.valueOf(params.getOrDefault("fee", "0"))) * 100));
+        String description = String.valueOf(params.get("description"));
+
+        Map<String, Object> feeParams = new HashMap<>();
+        feeParams.put("ruid", ruid);
+        feeParams.put("description", description);
+        feeParams.put("sourceType", 2);
+        feeParams.put("sourceValue", fee);
+        feeParams.put("value", fee);
+        feeParams.put("createTime", new Date());
+        if (!referMapper.operateFee(feeParams)) {
+            return false;
+        }
+        // 同步余额
+        return referMapper.syncReferUserBalance(ruid);
+    }
+
+    @Scheduled(fixedDelay = 1000 * 30)
+    public void autoExpireVipRechargeOrder() {
+        vipRechargeMapper.expire();
     }
 }

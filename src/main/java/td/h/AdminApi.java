@@ -225,6 +225,14 @@ public class AdminApi {
         return pageVo;
     }
 
+    @PostMapping("/referUser/fee")
+    public OptionVo operateReferUserFee(@RequestParam Map<String, Object> params) {
+        if (!hAdminRepository.operateReferUserFee(params)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
     @GetMapping("/refer/page")
     public PageVo pageRefer(
             @RequestParam(required = false, defaultValue = "1") int page,
@@ -241,7 +249,6 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        int ruid = getRuid(params);
         Pair<Long, List<T_Refer_Fee.ComplexReferFee>> objects = hAdminRepository.pageReferFee(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
@@ -301,5 +308,16 @@ public class AdminApi {
             return OptionVo.Fail;
         }
         return OptionVo.OK;
+    }
+
+    @GetMapping("/recharge/page")
+    public PageVo pageRecharge(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int rows,
+            @RequestParam Map<String, Object> params) {
+        Pair<Long, List<ComplexVipRecharge>> objects = hAdminRepository.pageVipRecharge(params, page, rows);
+        PageVo pageVo = new PageVo(objects.getValue0());
+        pageVo.getRows().addAll(objects.getValue1());
+        return pageVo;
     }
 }

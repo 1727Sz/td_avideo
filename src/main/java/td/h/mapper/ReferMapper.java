@@ -19,6 +19,8 @@ public interface ReferMapper {
     boolean disableReferUser(List<Integer> ids);
     long countReferUser(Map<String,Object> params);
     List<T_Refer_User> pageReferUser(Map<String,Object> params, RowBounds rowBounds);
+    boolean operateFee(Map<String, Object> params);
+    T_Refer_User getReferUserById(int ruid);
 
     long countComplexRefer(Map<String, Object> params);
     List<ComplexRefer> pageComplexRefer(Map<String,Object> params, RowBounds rowBounds);
@@ -26,4 +28,6 @@ public interface ReferMapper {
 
     long countComplexReferFee(Map<String, Object> params);
     List<T_Refer_Fee.ComplexReferFee> pageComplexReferFee(Map<String,Object> params, RowBounds rowBounds);
+    boolean syncReferUserBalance(int ruid);
+    boolean createReferUserFee(Map<String, Object> params);
 }

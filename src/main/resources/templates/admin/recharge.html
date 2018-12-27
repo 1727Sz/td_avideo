@@ -17,24 +17,32 @@
     <!-- Begin of toolbar -->
     <div id="wu-toolbar-forecast">
 
-        <div class="wu-toolbar-searchForecast" style="display: none">
-            <label>平台:</label>
-            <select id="platform" class="easyui-combobox" name="platform" panelHeight="auto" style="width:100px;">
+        <div class="wu-toolbar-searchForecast">
+
+            <label>订单创建时间:</label>
+            <input class="easyui-datetimebox" id="search_createtime_begin" name="startDate"
+                   data-options="showSeconds:true" style="width:150px">
+            -
+            <input class="easyui-datetimebox" id="search_createtime_end" name="endDate"
+                   data-options="showSeconds:true" style="width:150px">
+
+            <label>充值编号：</label><input id="search_order_no" class="wu-text" style="width:100px">
+            <label>用户ID：</label><input id="search_uid" class="wu-text" style="width:100px">
+            <label>用户名：</label><input id="search_username" class="wu-text" style="width:100px">
+            <label>用户昵称：</label><input id="search_nickname" class="wu-text" style="width:100px">
+            <label>产品名称：</label><input id="search_goodsName" class="wu-text" style="width:100px">
+
+
+            <label>支付状态:</label>
+            <select id="serach_payState" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
                 <option value="" selected="selected">全部</option>
-                <option value="1">Android</option>
-                <option value="2">iOS</option>
+                <option value="1">支付成功</option>
+                <option value="0">待支付</option>
+                <option value="-1">过期</option>
             </select>
-            <label>版本号：</label><input id="version_no" class="wu-text" style="width:100px">
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <label>最低版本号：</label><input id="low_version_no" class="wu-text" style="width:100px">
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            &nbsp;&nbsp;&nbsp;&nbsp;
-            <label>状态:</label>
-            <select id="state" class="easyui-combobox" name="state" panelHeight="auto" style="width:60px;">
-                <option value="" selected="selected">全部</option>
-                <option value="1">启用</option>
-                <option value="0">停用</option>
-            </select>
+
+
+
             <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
             <a href="#" class="easyui-linkbutton" iconCls="icon-reload" onclick="clearBox()">重置查询</a>
         </div>
@@ -128,11 +136,38 @@
 <!-- End of easyui-dialog -->
 <script type="text/javascript">
 
+
+    function compareTime(startTime, endTime) {
+        var startTimes = startTime.substring(0, 10).split('-');
+        var endTimes = endTime.substring(0, 10).split('-');
+        startTime = startTimes[1] + '-' + startTimes[2] + '-' + startTimes[0] + ' ' + startTime.substring(10, 19);
+        endTime = endTimes[1] + '-' + endTimes[2] + '-' + endTimes[0] + ' ' + endTime.substring(10, 19);
+        var thisResult = (Date.parse(endTime) - Date.parse(startTime)) / 3600 / 1000;
+        if (thisResult < 0 || thisResult == 0) {
+            return false;
+        } else if (thisResult > 0) {
+            return true;
+        } else {
+            $.messager.alert('信息提示', '时间异常', 'info');
+        }
+    }
+
     $(document).ready(function () {
+
+
+        var begin = new Date();
+        var end = new Date();
+        begin.setMonth(begin.getMonth() - 1);
+        $('#search_createtime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_createtime_end').datetimebox('setValue', formatterDate(end));
+
         $('#dg').datagrid({
-            url: "/admin/version/page",
+            url: "/admin/recharge/page",
             method: "get",
-            queryParams: {},
+            queryParams: {
+                createTime_begin: $("#search_createtime_begin").datetimebox("getValue"),
+                createTime_end: $("#search_createtime_end").datetimebox("getValue")
+            },
             rownumbers: true,  //是否显示行号
             singleSelect: false,
             pagination: true,
@@ -142,39 +177,47 @@
             showFooter: true,
             columns: [[
                 {checkbox: true},
-                {field: 'id', title: 'ID', width: 50, align: 'center'},
+                {field: 'orderNo', title: '充值编号', width: 150, align: 'center'},
+                {field: 'uid', title: '用户id', width: 100, align: 'center'},
+                {field: 'username', title: '用户名', width: 100, align: 'center'},
+                {field: 'nickname', title: '用户昵称', width: 100, align: 'center'},
+                {field: 'goodsName', title: '充值产品', width: 150, align: 'center'},
+                {field: 'prettyFee', title: '充值金额', width: 100, align: 'center'},
+                {field: 'payUrl', title: '充值支付地址', width: 500, align: 'center'},
                 {
-                    field: 'platform',
-                    title: '平台',
+                    field: 'payState',
+                    title: '支付状态',
                     width: 100,
                     align: 'center',
                     formatter: function (value, row, index) {
-                        return version_platform_type[value]
+                        return pay_state[value]
                     }
                 },
-                {field: 'versionNo', title: '版本号', width: 100, align: 'center'},
-                {field: 'lowVersionNo', title: '最低版本号', width: 100, align: 'center'},
-                {field: 'apkUrl', title: '包下载地址', width: 200, align: 'center'},
-                {field: 'downloadUrl', title: '下载页面', width: 200, align: 'center'},
-                {field: 'apkSize', title: '包大小', width: 100, align: 'center'},
-                {field: 'remark', title: '备注', width: 100, align: 'center'},
                 {
-                    field: 'upgrade',
-                    title: '是否强制升级',
-                    width: 100,
+                    field: 'createTime',
+                    title: '订单提交时间',
+                    width: 200,
                     align: 'center',
                     formatter: function (value, row, index) {
-                        return value ? "强制" : "非强制"
+                        return formatterDate(new Date(value))
                     }
                 },
                 {
-                    field: 'state', title: '状态', width: 100, align: 'center', formatter: function (value, row, index) {
-                        return version_state[value]
+                    field: 'payTime',
+                    title: '订单支付时间',
+                    width: 200,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        if (value) {
+                            return formatterDate(new Date(value))
+                        }
+                        return "-";
                     }
                 },
+
                 {
-                    field: 'updateTime',
-                    title: '更新时间',
+                    field: 'payExpireTime',
+                    title: '预计过期时间',
                     width: 200,
                     align: 'center',
                     formatter: function (value, row, index) {
@@ -192,9 +235,11 @@
     }
 
     // 状态(0-停用，1-启用，-1 删除)
-    var version_state = {
-        0: "停用",
-        1: "启用"
+    var pay_state = {
+        "-1": "<span style='color: red;'>过期</span>",
+        0: "<span style='color: black'>等待支付</span>",
+        1: "<span style='color: green;'>支付成功</span>"
+
     }
 
 
@@ -209,19 +254,45 @@
      * 根据条件查询
      */
     function searchsearch() {
+
+        var begin = $("#search_createtime_begin").datetimebox("getValue");
+        var end = $("#search_createtime_end").datetimebox("getValue");
+        if ((begin.length != 0 && end.length == 0) || (begin.length == 0 && end.length != 0)) {
+            $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
+            return;
+        }
+        if (begin.length != 0 && end.length != 0 && !compareTime(begin, end)) {
+            $.messager.alert('信息提示', '开始日期不能大于结束日期', 'info');
+            return;
+        }
+
         $('#dg').datagrid('load', {
-            "version": $("#version_no").val(),
-            "lowVersion": $("#low_version_no").val(),
-            "state": $("#state").combobox("getValue"),
-            "platform": $("#platform").combobox("getValue")
+            goodsName : $("#search_goodsName").val(),
+            uid: $("#search_uid").val(),
+            username: $("#search_username").val(),
+            nickname: $("#search_nickname").val(),
+            orderNo: $("#search_order_no").val(),
+            payState: $("#serach_payState").combobox("getValue"),
+
+            "createTimeBegin": begin,
+            "createTimeEnd": end
         });
     }
 
     function clearBox() {
-        $("#version_no").val("");
-        $("#low_version_no").val("");
-        $("#state").combobox("setValue", '');
-        $("#platform").combobox("setValue", '');
+        $("#search_goodsName").val("");
+        $("#search_username").val("");
+        $("#search_nickname").val("");
+        $("#search_uid").val("");
+        $("#search_order_no").val("");
+        $("#serach_payState").combobox("setValue", '');
+
+        var begin = new Date();
+        var end = new Date();
+        begin.setMonth(begin.getMonth() - 1);
+        $('#search_createtime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_createtime_end').datetimebox('setValue', formatterDate(end));
+
         searchsearch()
     }
 
@@ -401,7 +472,7 @@
      */
     function add() {
         $('#form-add-operation').form('submit', {
-            url: '/admin/version/add',
+            url: '/admin/rechar/add',
             success: function (data) {
                 data = JSON.parse(data)
                 if (!data.ok) {

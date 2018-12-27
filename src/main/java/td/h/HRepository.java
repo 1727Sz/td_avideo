@@ -37,8 +37,7 @@ public class HRepository {
     @Autowired private VipRechargeMapper vipRechargeMapper;
     @Autowired private VersionMapper versionMapper;
     @Autowired private LikeMapper likeMapper;
-
-
+    @Autowired private ReferMapper referMapper;
 
 
     /**
@@ -58,11 +57,9 @@ public class HRepository {
         // 生成token， token有效期30天
         String token = UUID.randomUUID().toString().replaceAll("-", "").toUpperCase();
         Date tokenExpireTime = Time.from(LocalDateTime.now().plusDays(30).atZone(ZoneId.systemDefault()).toInstant());
-        String nickname = T_User.showNickname("", username);
         //注册 <<<< 注册为普通用户
 
         Map<String, Object> params = new HashMap<>();
-        params.put("nickname", nickname);
         params.put("username", username);
         params.put("password", password);
         params.put("createTime", new Date());
@@ -186,11 +183,10 @@ public class HRepository {
     public T_User getUserById(int uid) {
         T_User user = userMapper.getById(uid);
 
-        if (Objects.isNull(user)) {
-            throw new BizException(17031702, "您的登录状态已过期，请重新登录");
-        }
 
-        user.setAvatar(ImagePath.showAvatar(domain, user.getRelativeAvatar()));
+        if (Objects.nonNull(user)) {
+            user.setAvatar(ImagePath.showAvatar(domain, user.getRelativeAvatar()));
+        }
 
         return user;
     }
@@ -222,7 +218,7 @@ public class HRepository {
         params.put("content", content);
         params.put("target", vid);
         params.put("uid", user.getId());
-        params.put("nickname", user.getNickname());
+        params.put("nickname", T_User.showNickname(user.getNickname(), user.getUsername()));
         params.put("avatar", user.getRelativeAvatar());
         commentMapper.comment(params);
 
@@ -248,11 +244,12 @@ public class HRepository {
         T_User user = getUserByToken(token);
         int uid = user.getId();
 
+        T_Comment comment = commentMapper.getCommentById(cid);
+
         if (!commentMapper.deleteComment(cid, uid)) {
             return;
         }
 
-        T_Comment comment = commentMapper.getCommentById(cid);
         int vid = comment.getVid();
         syncVideoComments(vid);
     }
@@ -546,10 +543,14 @@ public class HRepository {
 
                 // 更新数据库状态
                 vipRechargeMapper.updateRechargeState(orderNo, 1, new Date());
-                // 更新会员到期时间
-                syncUserVipExpireTime(recharge.getUid(), recharge.getVipPlusDay());
 
-                // todo 推广员相关同步
+                T_User user = getUserById(recharge.getUid());
+
+                // 更新会员到期时间
+                syncUserVipExpireTime(user, recharge.getVipPlusDay());
+
+                // 同步推广员的提成
+                syncReferUser(user, recharge);
 
                 return true;
             }
@@ -558,6 +559,48 @@ public class HRepository {
         }
 
         return true;
+    }
+
+    /**
+     * 同步推广员的提成
+     * 根据该充值记录，找到该用户的上线推广员，计算提成
+     *
+     * @param user
+     * @param recharge
+     */
+    public void syncReferUser(T_User user, T_VipRecharge recharge) {
+        if (Objects.isNull(user)) {
+            return;
+        }
+        if (user.getRegisterRefer() <= 0) {
+            return;
+        }
+
+        T_Refer_User referUser = referMapper.getReferUserById(user.getRegisterRefer());
+        if (Objects.isNull(referUser)) {
+            return;
+        }
+
+        if (referUser.getRate() <= 0 || !referUser.isEnable()) {
+            return;
+        }
+
+        int value = (int) (referUser.getRate() * recharge.getFee());
+        String description = MessageFormat.format("{0}购买{1}，提成{2}", user.getUsername(), recharge.getGoodsName(), Moneys.format_pretty(value));
+
+        // 先增加一条抽成记录
+        Map<String, Object> params = new HashMap<>();
+        params.put("ruid", user.getRegisterRefer());
+        params.put("source", recharge.getOrderNo());
+        params.put("sourceType", 1);
+        params.put("sourceValue", recharge.getFee());
+        params.put("value", value);
+        params.put("createTime", new Date());
+        params.put("description", description);
+        params.put("rate", referUser.getRate());
+        referMapper.createReferUserFee(params);
+        // 同步余额
+        referMapper.syncReferUserBalance(user.getRegisterRefer());
     }
 
     public RechargePreviewVo previewRecharge(String token) {
@@ -597,8 +640,10 @@ public class HRepository {
 
     }
 
-    private void syncUserVipExpireTime(int uid, int day) {
-        T_User user = getUserById(uid);
+    private void syncUserVipExpireTime(T_User user, int day) {
+        if (Objects.isNull(user)) {
+            return;
+        }
         Date now = new Date();
         LocalDateTime vipExpireLocalDateTime =
                 (
@@ -608,7 +653,7 @@ public class HRepository {
                 )
                         .toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
         Date expireTime = Date.from(vipExpireLocalDateTime.plusDays(day).atZone(ZoneId.systemDefault()).toInstant());
-        vipRechargeMapper.updateVipExpire(uid, expireTime);
+        vipRechargeMapper.updateVipExpire(user.getId(), expireTime);
     }
 
     public void syncRechargeByNotify(String orderNo) {

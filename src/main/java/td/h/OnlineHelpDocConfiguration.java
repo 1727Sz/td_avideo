@@ -28,11 +28,6 @@ public class OnlineHelpDocConfiguration {
         return "redirect:swagger-ui.html";
     }
 
-    @GetMapping("/")
-    String index() {
-        return "redirect:/doc";
-    }
-
 
     @Value("${server.port}") private int port;
 

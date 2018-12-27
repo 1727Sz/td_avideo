@@ -11,7 +11,7 @@ public class T_Refer_Fee {
     int id;
     int ruid;
     int sourceType; // // 1.下线充值抽成
-    int source;  // 具体的来源ID， 如会员充值订单ID
+    String source;  // 具体的来源ID， 如会员充值订单ID
     int sourceValue;
     int value; // 资金变动金额（有+/-之分，前者为入账，后者为出账）
     Date createTime;
