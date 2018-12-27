@@ -59,37 +59,40 @@
 
 <div id="dialog-operation" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
      style="width:750px; padding:10px;">
-    <form id="form-add-operation" method="post">
+    <form id="form-add-operation" method="post" enctype="multipart/form-data">
         <input type="hidden" id="id_operation_add" name="id"/>
         <table>
             <tr>
                 <td width="100" align="right">标题:</td>
                 <td><input type="text" name="title" class="easyui-validatebox"
-                           data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
+                           data-options="required:true,validType:length>0" style="width: 400px!important;"/></td>
 
             </tr>
 
             <tr>
                 <td width="100" align="right">播放地址:</td>
                 <td><input type="text" name="playUrl" class="easyui-validatebox"
-                           data-options="required:true,validType:length>0" style="width: 500px!important;"/></td>
+                           data-options="required:true,validType:length>0" style="width: 400px!important;"/></td>
             </tr>
             <tr>
                 <td align="right">封面:</td>
                 <td>
-                    <input type="text" name="cover" class="easyui-validatebox" data-options="validType:'url'"
-                           style="width:500px!important;"/>
+                    <input type="text" name="cover" class="easyui-validatebox"
+                           data-options="required:false,validType:length>0" style="width: 400px!important;"/>
                 </td>
+            </tr>
+
+            <tr>
+                <td align="right">封面（上传）:</td>
+                <td>
+                    <input type="file" name="file" style="width: 400px!important;"/>
+                </td>
+                <td>提示：若已填写封面地址，此项则忽略</td>
             </tr>
         </table>
     </form>
 </div>
 
-<div id="dialog-imaAbbr" class="easyui-dialog" data-options="closed:true,iconCls:'icon-save'"
-     style="width:480px; height:480px;padding:10px;">
-    <div id="abbrList" style="overflow: auto;">
-    </div>
-</div>
 
 
 <!-- End of easyui-dialog -->

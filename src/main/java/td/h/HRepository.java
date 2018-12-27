@@ -309,7 +309,13 @@ public class HRepository {
      * @param pageSize
      */
     public List<T_Video> pageVideo(int page, int pageSize) {
-        return videoMapper.page(new RowBounds((page - 1) * pageSize, pageSize));
+        return videoMapper.page(new RowBounds((page - 1) * pageSize, pageSize)).stream()
+                .peek(it -> {
+                    if (!Strings.isEmpty(it.getCover()) && !it.getCover().contains("http")) {
+                        it.setCover(ImagePath.showAvatar(domain, it.getCover()));
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -391,6 +397,12 @@ public class HRepository {
 
         video.setLiked(alreadyVideoLiked(token, vid));
         video.setFollowed(alreadyFollowed(token, vid));
+
+        if (!Strings.isEmpty(video.getCover()) ) {
+            if (!video.getCover().contains("http")) {
+                video.setCover(ImagePath.showAvatar(domain, video.getCover()));
+            }
+        }
         return video;
 
     }

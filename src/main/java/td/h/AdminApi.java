@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import td.h.o.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -22,6 +24,7 @@ public class AdminApi {
 
     @Autowired private HRepository hRepository;
     @Autowired private HAdminRepository hAdminRepository;
+    @Autowired private FileService fileService;
 
 
 
@@ -67,10 +70,16 @@ public class AdminApi {
     }
 
     @PostMapping("/video/add")
-    public OptionVo addVideo(@RequestParam Map<String, Object> params) {
+    public OptionVo addVideo(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam Map<String, Object> params) throws IOException {
         String title = String.valueOf(params.get("title"));
-        String cover = String.valueOf(params.get("cover"));
         String playUrl = String.valueOf(params.get("playUrl"));
+        String cover = String.valueOf(params.getOrDefault("cover", ""));
+        if (Strings.isNullOrEmpty(cover)) {
+            ImagePath path = fileService.save(file);
+            cover = path.relativePath();
+        }
         if (!hAdminRepository.addVideo(title, cover, playUrl)) {
             return OptionVo.Fail;
         }
@@ -78,12 +87,18 @@ public class AdminApi {
     }
 
     @PostMapping("/video/edit")
-    public OptionVo editVideo(@RequestParam Map<String, Object> params) {
+    public OptionVo editVideo(
+            @RequestParam("file") MultipartFile file,
+            @RequestParam Map<String, Object> params) throws IOException {
         int id = Integer.parseInt(String.valueOf(params.get("id")));
         String title = String.valueOf(params.get("title"));
-        String cover = String.valueOf(params.get("cover"));
         String playUrl = String.valueOf(params.get("playUrl"));
-        if (!hAdminRepository.updateVideo(id, title, cover, playUrl)) {
+        String cover = String.valueOf(params.getOrDefault("cover", ""));
+        if (Strings.isNullOrEmpty(cover)) {
+            ImagePath path = fileService.save(file);
+            cover = path.relativePath();
+        }
+        if (hAdminRepository.updateVideo(id, title, cover, playUrl)) {
             return OptionVo.Fail;
         }
         return OptionVo.OK;

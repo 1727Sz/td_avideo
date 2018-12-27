@@ -13,7 +13,7 @@
         update h.t_video
         set title = #{title},
             cover = #{cover}, playUrl = #{playUrl}, enable = #{enable}, updateTime = #{updateTime}
-        where id = ?
+        where id = #{id}
 
     </update>
     <delete id="followCancel">
