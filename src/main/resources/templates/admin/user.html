@@ -27,6 +27,14 @@
             <label>用户ID：</label><input id="search_uid" class="wu-text" style="width:100px">
             <label>用户名：</label><input id="search_username" class="wu-text" style="width:100px">
             <label>用户昵称：</label><input id="search_nickname" class="wu-text" style="width:100px">
+            <label>推广员ID：</label><input id="search_refer" class="wu-text" style="width:100px">
+            <label>推广员姓名：</label><input id="search_refer_name" class="wu-text" style="width:100px">
+            <label>会员:</label>
+            <select id="search_vip_state" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
+                <option value="-1" selected="selected">全部</option>
+                <option value="1">会员</option>
+                <option value="0">非会员</option>
+            </select>
 
 
             <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
@@ -158,6 +166,8 @@
                         return formatterDate(new Date(value))
                     }
                 },
+                {field: 'registerRefer', title: '推广员ID', width: 100, align: 'center'},
+                {field: 'referName', title: '推广员名称', width: 100, align: 'center'},
             ]]
         });
 
@@ -197,6 +207,10 @@
             "uid": $("#search_uid").val(),
             "nickname": $("#search_nickname").val(),
             "username": $("#search_username").val(),
+            vipState: $("#search_vip_state").combobox("getValue"),
+            refer: $("#search_refer").val(),
+            referName: $("#search_refer_name").val(),
+
             "createTimeBegin": begin,
             "createTimeEnd": end
         });
@@ -206,6 +220,9 @@
         $("#search_uid").val("");
         $("#search_username").val("");
         $("#search_nickname").val("");
+        $("#search_refer").val("");
+        $("#search_refer_name").val("");
+        $("#search_vip_state").combobox("setValue", "-1");
 
         var begin = new Date();
         var end = new Date();

@@ -53,6 +53,15 @@
                        where ruid = #{_parameter})
         where id = #{_parameter}
     </update>
+    <update id="syncReferUserCount">
+        update h.t_refer_user
+        set referCount = (
+            select count(1)
+            from h.t_user
+            where registerRefer = #{_parameter}
+        )
+        where id = #{_parameter}
+    </update>
 
     <delete id="deleteReferUser">
         delete from h.t_refer_user where id in

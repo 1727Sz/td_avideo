@@ -45,4 +45,10 @@ public class T_User {
     public String getVipExpireDay() {
         return Times.format(this.vipExpireTime, "yyyy-MM-dd");
     }
+
+    @Data
+    public static class ComplexAdminUser extends T_User {
+
+        String referName;
+    }
 }

@@ -14,7 +14,7 @@
     </insert>
     <update id="updateRechargeState">
         update h.t_vip_recharge
-        set payState = ?, payTime = ?
+        set payState = #{payState}, payTime = #{payTime}
         where orderNo = #{orderNo}
     </update>
     <update id="updateVipExpire">

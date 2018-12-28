@@ -25,7 +25,7 @@ public class T_Video {
 
     @ApiModelProperty("时间")
     public String getTime() {
-        return Times.format(this.updateTime, Times.yyyyMMddHHmm);
+        return Times.format(this.updateTime, Times.MMddHHmm);
     }
 
     @Data

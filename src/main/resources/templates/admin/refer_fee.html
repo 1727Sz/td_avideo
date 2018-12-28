@@ -30,7 +30,8 @@
             <label>推广员ID：</label><input id="search_ruid" class="wu-text" style="width:100px">
             <label>推广员名称：</label><input id="search_name" class="wu-text" style="width:100px">
             <label>变动类型:</label>
-            <select id="search_source_type" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
+            <select id="search_source_type" class="easyui-combobox" name="state" panelHeight="auto"
+                    style="width:100px;">
                 <option value="" selected="selected">全部</option>
                 <option value="1">会员充值</option>
                 <option value="2">后台操作</option>
@@ -64,20 +65,14 @@
 </div>
 
 
-
-
-
-
-
 <!-- End of easyui-dialog -->
 <script type="text/javascript">
-
 
 
     var source_type = {
         0: "<span style='color: #99BBE8;'>其他</span>",
         1: "<span style='color: #0052A3;'>线下会员充值</span>",
-       2: "<span style='color: #0402ff;'>后台操作</span>"
+        2: "<span style='color: #0402ff;'>后台操作</span>"
     }
 
     function compareTime(startTime, endTime) {
@@ -121,16 +116,7 @@
                 {field: 'id', title: '流水ID', width: 50, align: 'center'},
                 {field: 'ruid', title: '推广员ID', width: 50, align: 'center'},
                 {field: 'name', title: '推广员名称', width: 100, align: 'center'},
-                {
-                    field: 'sourceType',
-                    title: '来源',
-                    width: 70,
-                    align: 'center',
-                    formatter: function (value, row, index) {
-                        return source_type[value]
-                    }
-                },
-                {field: 'source', title: '来源值', width: 50, align: 'center'},
+
                 {field: 'prettySourceValue', title: '来源金额', width: 100, align: 'center'},
                 {
                     field: 'prettyValue',
@@ -140,6 +126,18 @@
                     formatter: function (value, row, index) {
                         var out = value.indexOf("-") > -1;
                         return "<span style='color: " + (out ? "red" : "green") + ";'>" + value + "</span>"
+                    }
+                },
+                {
+                    field: 'sourceType',
+                    title: '来源',
+                    width: 300,
+                    align: 'center',
+                    formatter: function (value, row, index) {
+                        if (1 == value) {
+                            return source_type[value] + "(充值流水：" + row.source + ")"
+                        }
+                        return source_type[value]
                     }
                 },
                 {field: 'description', title: '描述', width: 300, align: 'center'},
@@ -193,7 +191,7 @@
             id: $("#search_id").val(),
             ruid: $("#search_ruid").val(),
             description: $("#search_description").val(),
-            sourceType : $("#search_source_type").combobox("getValue"),
+            sourceType: $("#search_source_type").combobox("getValue"),
             direction: $("#search_direction").combobox("getValue"),
             name: $("#search_name").val(),
             "createTimeBegin": begin,
@@ -207,8 +205,8 @@
         $("#search_name").val("");
         $("#search_id").val("");
         $("#search_description").val("");
-        $("#search_source_type").combobox("setValue","")
-        $("#search_direction").combobox("setValue","0")
+        $("#search_source_type").combobox("setValue", "")
+        $("#search_direction").combobox("setValue", "0")
 
         var begin = new Date();
         var end = new Date();

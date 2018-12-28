@@ -146,6 +146,16 @@
         }
         else {
             tabPanel.tabs('select', title);
+            //当前tab
+            var current_tab = tabPanel.tabs('getSelected');
+            tabPanel.tabs('update',{
+                tab:current_tab,
+                options : {
+                    href: href
+                }
+            });
+
+
         }
     }
 

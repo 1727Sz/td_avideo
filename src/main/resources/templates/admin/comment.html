@@ -25,6 +25,7 @@
             -
             <input class="easyui-datetimebox" id="search_createtime_end" name="endDate"
                    data-options="showSeconds:true" style="width:150px">
+
             <label>用户ID：</label><input id="search_uid" class="wu-text" style="width:100px">
             <label>用户昵称：</label><input id="search_nickname" class="wu-text" style="width:100px">
             <label>评论内容：</label><input id="search_content" class="wu-text" style="width:100px">
@@ -88,8 +89,8 @@
             url: "/admin/comment/page",
             method: "get",
             queryParams: {
-                createTime_begin: $("#search_createtime_begin").datetimebox("getValue"),
-                createTime_end: $("#search_createtime_end").datetimebox("getValue")
+                createTimeBegin: $("#search_createtime_begin").datetimebox("getValue"),
+                createTimeEnd: $("#search_createtime_end").datetimebox("getValue")
             },
             rownumbers: true,  //是否显示行号
             singleSelect: false,

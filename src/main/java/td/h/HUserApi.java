@@ -41,6 +41,14 @@ public class HUserApi {
         return new ApiResponse.Ok("", user);
     }
 
+    @PostMapping("/byToken")
+    @ApiOperation(value = "通过token获取会员信息", response = T_User.class)
+    public ApiResponse byToken(@RequestHeader(HK_TOKEN) String token) {
+
+        T_User user = hRepository.getUserByToken(token);
+        return new ApiResponse.Ok("", user);
+    }
+
     @PostMapping("/updatePassword")
     @ApiOperation(value = "修改密码", response = T_User.class)
     public ApiResponse updatePassword(

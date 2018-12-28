@@ -25,5 +25,5 @@ public interface UserMapper {
     boolean createNewUser(Map<String, Object> params);
 
     int count(Map<String, Object> params);
-    List<T_User> adminPage(Map<String, Object> params, RowBounds rowBounds);
+    List<T_User.ComplexAdminUser> adminPage(Map<String, Object> params, RowBounds rowBounds);
 }

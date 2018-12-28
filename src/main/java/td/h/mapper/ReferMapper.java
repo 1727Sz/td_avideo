@@ -30,4 +30,6 @@ public interface ReferMapper {
     List<T_Refer_Fee.ComplexReferFee> pageComplexReferFee(Map<String,Object> params, RowBounds rowBounds);
     boolean syncReferUserBalance(int ruid);
     boolean createReferUserFee(Map<String, Object> params);
+
+    boolean syncReferUserCount(int ruid);
 }

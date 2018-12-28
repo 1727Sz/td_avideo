@@ -63,24 +63,34 @@
     </select>
 
 
-    <select id="adminPage" resultType="td.h.o.T_User">
-        select * from h.t_user
+    <select id="adminPage" resultType="td.h.o.T_User$ComplexAdminUser">
+        select u.*, ru.name referName from h.t_user u left join h.t_refer_user ru on ru.id = u.registerRefer
         <include refid="query"/>
-        order by id desc
+        order by u.id desc
     </select>
 
     <select id="count" resultType="java.lang.Integer">
-        select count(1) from h.t_user
+        select count(1) from h.t_user u left join h.t_refer_user ru on ru.id = u.registerRefer
         <include refid="query"/>
     </select>
 
     <sql id="query">
         <where>
-            <if test="uid != null and uid!=''">and id = #{uid}</if>
-            <if test="nickname != null and nickname!=''">and nickname like concat('%', #{nickname},'%')</if>
-            <if test="username != null and username!=''">and username like concat('%', #{username},'%')</if>
-            <if test="createTimeBegin != null and createTimeBegin!=''">and createTime &gt; #{createTimeBegin}</if>
-            <if test="createTimeEnd != null and createTimeEnd!=''">and createTime &lt; #{createTimeEnd}</if>
+            <if test="uid != null and uid!=''">and u.id = #{uid}</if>
+            <if test="nickname != null and nickname!=''">and u.nickname like concat('%', #{nickname},'%')</if>
+            <if test="username != null and username!=''">and u.username like concat('%', #{username},'%')</if>
+            <if test="createTimeBegin != null and createTimeBegin!=''">and u.createTime &gt; #{createTimeBegin}</if>
+            <if test="createTimeEnd != null and createTimeEnd!=''">and u.createTime &lt; #{createTimeEnd}</if>
+            <if test="refer != null and refer!=''">and u.registerRefer = #{refer}</if>
+            <if test="referName != null and referName!=''">and ru.name like concat('%', #{referName},'%')</if>
+            <if test="vipState != null and vipState!=''">
+                <if test="vipState == 1">
+                    and u.vipExpireTime &gt; now()
+                </if>
+                <if test="vipState == 0">
+                    and (u.vipExpireTime is null or u.vipExpireTime &lt; now())
+                </if>
+            </if>
         </where>
     </sql>
 

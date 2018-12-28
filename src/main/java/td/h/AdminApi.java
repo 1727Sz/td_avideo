@@ -130,7 +130,7 @@ public class AdminApi {
             @RequestParam(required = false, defaultValue = "1") int page,
             @RequestParam(required = false, defaultValue = "20") int rows,
             @RequestParam Map<String, Object> params) {
-        Pair<Long, List<T_User>> objects = hAdminRepository.pageUser(params, page, rows);
+        Pair<Long, List<T_User.ComplexAdminUser>> objects = hAdminRepository.pageUser(params, page, rows);
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;

@@ -80,6 +80,7 @@ public class HRepository {
 
     public void syncReferCount(int refer) {
 
+        referMapper.syncReferUserCount(refer);
     }
 
     /**
@@ -398,7 +399,7 @@ public class HRepository {
         video.setLiked(alreadyVideoLiked(token, vid));
         video.setFollowed(alreadyFollowed(token, vid));
 
-        if (!Strings.isEmpty(video.getCover()) ) {
+        if (!Strings.isEmpty(video.getCover())) {
             if (!video.getCover().contains("http")) {
                 video.setCover(ImagePath.showAvatar(domain, video.getCover()));
             }
@@ -637,13 +638,20 @@ public class HRepository {
             Response execute = okHttpClient.newCall(request).execute();
             String response = execute.body().string();
             JsonObject json = JSONMapper.fromJson(response, JsonObject.class);
+            log.error("查询第三方订单，order={}", response);
             if (!"success".equals(json.get("status").getAsString())) {
                 throw new BizException(18122008, json.get("message").getAsString());
             }
             JsonObject order = json.get("order").getAsJsonObject();
-            // 1：代表未支付；2：代表已支付
-            int payStatus = order.get("payStatus").getAsInt();
-            return 2 == payStatus;
+//            // 1：代表未支付；2：代表已支付
+//            int payStatus = order.get("payStatus").getAsInt();
+//            return 2 == payStatus;
+
+            // fuck 对方的支付状态好像没用。支付了，依然显示未支付payStatus=1，
+            // 无奈用payTime有无值来判断。
+            // 希望这个值能说明是否支付
+
+            return order.keySet().contains("payTime");
         } catch (IOException e) {
             log.error("充值订单查询第三方时失败，orderNo={}, e={}", orderNo, e);
             throw new BizException(18122003, "订单提交失败，请稍后再试");

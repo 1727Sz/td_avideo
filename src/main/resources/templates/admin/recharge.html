@@ -34,9 +34,9 @@
 
 
             <label>支付状态:</label>
-            <select id="serach_payState" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
-                <option value="" selected="selected">全部</option>
-                <option value="1">支付成功</option>
+            <select id="search_payState" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
+                <option value="" >全部</option>
+                <option value="1" selected="selected">支付成功</option>
                 <option value="0">待支付</option>
                 <option value="-1">过期</option>
             </select>
@@ -272,7 +272,7 @@
             username: $("#search_username").val(),
             nickname: $("#search_nickname").val(),
             orderNo: $("#search_order_no").val(),
-            payState: $("#serach_payState").combobox("getValue"),
+            payState: $("#search_payState").combobox("getValue"),
 
             "createTimeBegin": begin,
             "createTimeEnd": end
@@ -285,7 +285,7 @@
         $("#search_nickname").val("");
         $("#search_uid").val("");
         $("#search_order_no").val("");
-        $("#serach_payState").combobox("setValue", '');
+        $("#search_payState").combobox("setValue", '1');
 
         var begin = new Date();
         var end = new Date();

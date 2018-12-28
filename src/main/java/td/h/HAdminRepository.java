@@ -9,10 +9,12 @@ import org.springframework.stereotype.Repository;
 import td.h.mapper.*;
 import td.h.o.*;
 
+import java.text.MessageFormat;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Repository
 public class HAdminRepository {
@@ -71,9 +73,9 @@ public class HAdminRepository {
         return configurationMapper.save(new T_Configuration(monthVipPrice, quarterVipPrice, yearVipPrice));
     }
 
-    public Pair<Long, List<T_User>> pageUser(Map<String, Object> params, int page, int pageSize) {
+    public Pair<Long, List<T_User.ComplexAdminUser>> pageUser(Map<String, Object> params, int page, int pageSize) {
         long total = userMapper.count(params);
-        List<T_User> values = userMapper.adminPage(params, new RowBounds((page - 1) * pageSize, pageSize));
+        List<T_User.ComplexAdminUser> values = userMapper.adminPage(params, new RowBounds((page - 1) * pageSize, pageSize));
 
         return Pair.with(total, values);
     }
@@ -146,7 +148,12 @@ public class HAdminRepository {
 
     public Pair<Long, List<T_Refer_User>> pageReferUser(Map<String, Object> params, int page, int pageSize) {
         long total = referMapper.countReferUser(params);
-        List<T_Refer_User> values = referMapper.pageReferUser(params, new RowBounds((page - 1) * pageSize, pageSize));
+        List<T_Refer_User> values = referMapper
+                .pageReferUser(params, new RowBounds((page - 1) * pageSize, pageSize))
+                .stream()
+                .peek(it -> it.setUrl(MessageFormat.format(referUserRegUrlTemplate, String.valueOf(it.getId()))))
+                .collect(Collectors.toList());
+                ;
 
         return Pair.with(total, values);
     }
@@ -172,9 +179,12 @@ public class HAdminRepository {
         return Pair.with(total, values);
     }
 
+    @Value("${refer.template.reg}") private String referUserRegUrlTemplate;
+
     public boolean addReferUser(Map<String, Object> params) {
         params.put("createTime", new Date());
         params.put("enable", Integer.parseInt(String.valueOf(params.getOrDefault("enable", 0))));
+        params.put("url", referUserRegUrlTemplate);
         return referMapper.addReferUser(params);
     }
 
