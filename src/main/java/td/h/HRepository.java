@@ -420,6 +420,7 @@ public class HRepository {
     @Value("${pay.api.gte}") private String gtePayApi;
     @Value("${pay.notify.async}") private String asyncNotifyUrl;
     @Value("${pay.notify.sync}") private String syncNotifyUrl;
+    @Value("${pay.notify.callback_show}") private String callbackShowUrl;
     @Value("${pay.channel}") private String payChannel;
     @Value("${pay.secret}") private String paySecret;
     @Value("${pay.type}") private String payType;
@@ -442,6 +443,7 @@ public class HRepository {
                 .add("sign", sign)
                 .add("notifyUrl", asyncNotifyUrl)
                 .add("returnUrl", syncNotifyUrl)
+                .add("showUrl", callbackShowUrl)
                 .add("payType", payType)
                 .add("payCategory", payCategory)
                 .add("goodsName", name)

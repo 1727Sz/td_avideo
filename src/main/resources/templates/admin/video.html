@@ -17,22 +17,14 @@
     <!-- Begin of toolbar -->
     <div id="wu-toolbar-forecast">
 
-        <div class="wu-toolbar-searchForecast" style="display: none">
-            <label>创建时间:</label>
-            <input class="easyui-datetimebox" id="begin" name="startDate"
+        <div class="wu-toolbar-searchForecast">
+            <label>更新时间:</label>
+            <input class="easyui-datetimebox" id="search_updatetime_begin" name="startDate"
                    data-options="showSeconds:true" style="width:150px">
             -
-            <input class="easyui-datetimebox" id="end" name="endDate"
+            <input class="easyui-datetimebox" id="search_updatetime_end" name="endDate"
                    data-options="showSeconds:true" style="width:150px">
-            <label>标题：</label><input id="title" class="wu-text" style="width:100px">
-            <label>简介：</label><input id="intro" class="wu-text" style="width:100px">
-            <label>状态:</label>
-            <select id="state" class="easyui-combobox" name="state" panelHeight="auto" style="width:100px;">
-                <option value="" selected="selected">全部</option>
-                <option value="0">待审核</option>
-                <option value="1">审核通过</option>
-                <option value="2">审核拒绝</option>
-            </select>
+            <label>标题：</label><input id="search_title" class="wu-text" style="width:100px">
 
 
             <a href="#" class="easyui-linkbutton" iconCls="icon-search" onclick="searchsearch()">开始检索</a>
@@ -125,15 +117,15 @@
         var begin = new Date();
         var end = new Date();
         begin.setMonth(begin.getMonth() - 1);
-        $('#begin').datetimebox('setValue', formatterDate(begin));
-        $('#end').datetimebox('setValue', formatterDate(end));
+        $('#search_updatetime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_updatetime_end').datetimebox('setValue', formatterDate(end));
 
         $('#dg').datagrid({
             url: "/admin/video/page",
             method: "get",
             queryParams: {
-                createTime_begin: $("#begin").datetimebox("getValue"),
-                createTime_end: $("#end").datetimebox("getValue")
+                updateTimeBegin: $("#search_updatetime_begin").datetimebox("getValue"),
+                updateTimeEnd: $("#search_updatetime_end").datetimebox("getValue")
             },
             rownumbers: true,  //是否显示行号
             singleSelect: false,
@@ -146,19 +138,10 @@
                 {checkbox: true},
                 {field: 'id', title: 'ID', width: 50, align: 'center'},
                 {field: 'title', title: '标题', width: 200, align: 'center'},
-                {field: 'cover', title: '封面', width: 200, align: 'center'},
+                {field: 'cover', title: '封面', width: 300, align: 'center'},
                 {field: 'playUrl', title: '播放地址', width: 500, align: 'center'},
                 {field: 'comments', title: '评论数', width: 100, align: 'center'},
                 {field: 'likes', title: '点赞数', width: 100, align: 'center'},
-                {
-                    field: 'createTime',
-                    title: '创建时间',
-                    width: 200,
-                    align: 'center',
-                    formatter: function (value, row, index) {
-                        return formatterDate(new Date(value))
-                    }
-                },
                 {
                     field: 'updateTime',
                     title: '更新时间',
@@ -203,8 +186,8 @@
      * 根据条件查询
      */
     function searchsearch() {
-        var begin = $("#begin").datetimebox("getValue");
-        var end = $("#end").datetimebox("getValue");
+        var begin = $("#search_updatetime_begin").datetimebox("getValue");
+        var end = $("#search_updatetime_end").datetimebox("getValue");
         if ((begin.length != 0 && end.length == 0) || (begin.length == 0 && end.length != 0)) {
             $.messager.alert('信息提示', '开始日期、结束日期必选', 'info');
             return;
@@ -214,23 +197,20 @@
             return;
         }
         $('#dg').datagrid('load', {
-            "title": $("#title").val(),
-            "intro": $("#intro").val(),
-            "state": $("#state").combobox("getValue"),
-            "createTime_begin": begin,
-            "createTime_end": end
+            "title": $("#search_title").val(),
+            updateTimeBegin: begin,
+            updateTimeEnd: end
         });
     }
 
     function clearBox() {
-        $("#title").val("");
-        $("#state").combobox("setValue", '');
+        $("#search_title").val("");
 
         var begin = new Date();
         var end = new Date();
         begin.setMonth(begin.getMonth() - 1);
-        $('#begin').datetimebox('setValue', formatterDate(begin));
-        $('#end').datetimebox('setValue', formatterDate(end));
+        $('#search_updatetime_begin').datetimebox('setValue', formatterDate(begin));
+        $('#search_updatetime_end').datetimebox('setValue', formatterDate(end));
         searchsearch()
     }
 

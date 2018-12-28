@@ -165,8 +165,9 @@
             url: "/admin/recharge/page",
             method: "get",
             queryParams: {
-                createTime_begin: $("#search_createtime_begin").datetimebox("getValue"),
-                createTime_end: $("#search_createtime_end").datetimebox("getValue")
+                createTimeBegin: $("#search_createtime_begin").datetimebox("getValue"),
+                createTimeEnd: $("#search_createtime_end").datetimebox("getValue"),
+                payState: $("#search_payState").combobox("getValue"),
             },
             rownumbers: true,  //是否显示行号
             singleSelect: false,
