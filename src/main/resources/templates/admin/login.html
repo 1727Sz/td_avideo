@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>login</title>
+    <link rel="stylesheet" type="text/css" href="easyui/1.3.4/themes/default/easyui.css"/>
+    <link rel="stylesheet" type="text/css" href="css/wu.css"/>
+    <link rel="stylesheet" type="text/css" href="easyui/1.3.4/themes/icon.css"/>
+    <script type="text/javascript" src="easyui/1.3.4/jquery.min.js"></script>
+    <script type="text/javascript" src="easyui/1.3.4/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src=""></script>
+    <style>
+        body {
+            text-align: center;
+        }
+
+        div.login {
+            margin: auto;
+            margin-top: 50px;
+        }
+
+    </style>
+
+</head>
+<body style="background-color: #1D2024; color: white;">
+<h1>后台管理</h1>
+<h2>海量视频，冲击你的视觉感官</h2>
+<!--<div style="margin:20px 0;"></div>-->
+<div class="login" title="" style="width: 400px; background: #F7F7F7;: inherit; color: black">
+    <div style="padding:50px;">
+        <form id="loginForm" method="post">
+            <table style="margin: auto; width: 100%">
+                <tr>
+                    <!--<td>账号:</td>-->
+                    <td><input class="easyui-textbox" type="text" name="username" style="width: 75%; height: 30px;"
+                               placeholder="请输入用户名"></input></td>
+                </tr>
+                <tr>
+                    <!--<td>密码:</td>-->
+                    <td><input class="easyui-textbox" type="password" name="password" style="width: 75%; height: 30px;"
+                               placeholder="请输入密码"></input></td>
+                </tr>
+                <tr>
+                    <td></td>
+                </tr>
+                <tr>
+                    <!--<td></td>-->
+                    <td>
+                        <button style="width: 75%; height: 30px;">登陆</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+    </div>
+</div>
+<script type="text/javascript">
+    $(function () {
+        $('#loginForm').form({
+            url: '/admin/login',
+            onSubmit: function () {
+                return $(this).form('validate');
+            },
+            success: function (data) {
+                console.log("origin data: " + data)
+                data = JSON.parse(data)
+                console.log(data.ok)
+                console.log(data.msg)
+                if (!data.ok) {
+                    $.messager.alert("提示", data.msg)
+                    return
+                }
+                window.location = "index.html";
+            }, dataType: 'json',
+            contentType: "application/json"
+        });
+    });
+</script>
+</body>
+</html>

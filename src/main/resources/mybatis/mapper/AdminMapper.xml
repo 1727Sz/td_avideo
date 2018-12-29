@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="td.h.mapper.AdminMapper">
+    <insert id="createNewAdmin">
+        insert into h.t_admin (username, password, description)
+        values (#{username}, #{password}, #{description});
+    </insert>
+    <update id="updatePassword">
+        update h.t_admin
+        set password = #{password}
+        where id = #{id}
+    </update>
+    <delete id="deleteAdmin">
+        delete from h.t_admin
+        where id  in <foreach collection="list" close=")" separator="," open="(" item="item" index="index">#{item}</foreach>
+    </delete>
+
+
+    <select id="page" resultType="td.h.o.T_Admin">
+        select * from h.t_admin
+        <include refid="query"/>
+        order by id desc
+    </select>
+
+    <select id="count" resultType="java.lang.Long">
+        select count(1) from h.t_admin
+        <include refid="query"/>
+    </select>
+    <select id="getByUserName" resultType="td.h.o.T_Admin">
+        select *
+        from h.t_admin
+        where username = #{_parameter}
+    </select>
+    <select id="alreadyHasUsername" resultType="java.lang.Boolean">
+        select count(1)
+        from h.t_admin
+        where username = #{_parameter}
+    </select>
+
+    <sql id="query">
+        <where>
+            <if test="username != null and username!=''">and username like concat('%', #{username},'%')</if>
+            <if test="description != null and description!=''">and description like concat('%', #{description},'%')</if>
+        </where>
+    </sql>
+</mapper>

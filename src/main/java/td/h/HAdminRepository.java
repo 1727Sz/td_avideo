@@ -1,5 +1,6 @@
 package td.h;
 
+import com.google.common.base.Strings;
 import org.apache.ibatis.session.RowBounds;
 import org.javatuples.Pair;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,10 +11,7 @@ import td.h.mapper.*;
 import td.h.o.*;
 
 import java.text.MessageFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Repository
@@ -27,6 +25,7 @@ public class HAdminRepository {
     @Autowired private VersionMapper versionMapper;
     @Autowired private VipRechargeMapper vipRechargeMapper;
     @Autowired private ReferMapper referMapper;
+    @Autowired private AdminMapper adminMapper;
 
 
     /**
@@ -153,7 +152,7 @@ public class HAdminRepository {
                 .stream()
                 .peek(it -> it.setUrl(MessageFormat.format(referUserRegUrlTemplate, String.valueOf(it.getId()))))
                 .collect(Collectors.toList());
-                ;
+        ;
 
         return Pair.with(total, values);
     }
@@ -235,5 +234,51 @@ public class HAdminRepository {
     @Scheduled(fixedDelay = 1000 * 30)
     public void autoExpireVipRechargeOrder() {
         vipRechargeMapper.expire();
+    }
+
+    public Pair<Long, List<T_Admin>> pageAdmin(Map<String, Object> params, int page, int pageSize) {
+        long total = videoMapper.count(params);
+        List<T_Admin> values = adminMapper.page(params, new RowBounds((page - 1) * pageSize, pageSize));
+        return Pair.with(total, values);
+    }
+
+    public boolean createAdmin(Map<String, Object> params) {
+        String username = String.valueOf(params.getOrDefault("username", ""));
+        if (Strings.isNullOrEmpty(username)) {
+            return false;
+        }
+        if (adminMapper.alreadyHasUsername(username)) {
+            return false;
+        }
+        return adminMapper.createNewAdmin(params);
+    }
+
+    public boolean updateAdminPassword(Map<String, Object> params) {
+        return adminMapper.updatePassword(params);
+    }
+
+
+    public T_Admin getAdminByLogin(String username, String password) {
+
+        // 特别注意：
+        // 为防止数据库里的admin账号被误删导致登陆不上，此处设置一个默认系统管理员
+        T_Admin defaultAdmin = T_Admin.defalutAadmin;
+        if (defaultAdmin.getUsername().equals(username)) {
+            if (defaultAdmin.getPassword().equals(password)) {
+                return defaultAdmin;
+            }
+        }
+
+        T_Admin admin = adminMapper.getByUserName(username);
+        if (Objects.nonNull(admin)) {
+            if (password.equals(admin.getPassword())) {
+                return admin;
+            }
+        }
+        return null;
+    }
+
+    public boolean deleteAdmin(List<Integer> id){
+        return adminMapper.deleteAdmin(id);
     }
 }

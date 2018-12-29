@@ -11,11 +11,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import td.h.o.*;
 
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -25,8 +23,6 @@ public class AdminApi {
     @Autowired private HRepository hRepository;
     @Autowired private HAdminRepository hAdminRepository;
     @Autowired private FileService fileService;
-
-
 
 
     @Data
@@ -43,7 +39,7 @@ public class AdminApi {
     public static class OptionVo {
 
         public static final OptionVo OK = new OptionVo(true, "操作成功");
-        public static final OptionVo Fail = new OptionVo(true, "操作失败");
+        public static final OptionVo Fail = new OptionVo(false, "操作失败");
 
         boolean ok;
         String msg;
@@ -336,5 +332,48 @@ public class AdminApi {
         PageVo pageVo = new PageVo(objects.getValue0());
         pageVo.getRows().addAll(objects.getValue1());
         return pageVo;
+    }
+
+    @PostMapping("login")
+    public OptionVo login(@RequestParam Map<String, Object> params, HttpSession session) {
+        String username = String.valueOf(params.getOrDefault("username", ""));
+        String password = String.valueOf(params.getOrDefault("password", ""));
+
+        T_Admin admin = hAdminRepository.getAdminByLogin(username, password);
+        if (Objects.isNull(admin)) {
+            return OptionVo.Fail;
+        }
+
+        session.setAttribute("login", true);
+
+        return OptionVo.OK;
+    }
+
+    @GetMapping("/admin/page")
+    public PageVo pageAdmin(
+            @RequestParam(required = false, defaultValue = "1") int page,
+            @RequestParam(required = false, defaultValue = "20") int rows,
+            @RequestParam Map<String, Object> params) {
+        Pair<Long, List<T_Admin>> objects = hAdminRepository.pageAdmin(params, page, rows);
+        PageVo pageVo = new PageVo(objects.getValue0());
+        pageVo.getRows().addAll(objects.getValue1());
+        return pageVo;
+    }
+
+    @PostMapping("/admin/add")
+    public OptionVo addAdmin(@RequestParam Map<String, Object> params) {
+        if (!hAdminRepository.createAdmin(params)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
+    }
+
+    @PostMapping("/admin/delete")
+    public OptionVo deleteAdmin(@RequestBody Map<String, Object> params) {
+        List<Integer> id = Arrays.stream(String.valueOf(params.get("id")).split(",")).map(Integer::parseInt).collect(Collectors.toList());
+        if (!hAdminRepository.deleteAdmin(id)) {
+            return OptionVo.Fail;
+        }
+        return OptionVo.OK;
     }
 }
