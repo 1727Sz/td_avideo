@@ -108,8 +108,11 @@ public class HUserApi {
 
     @GetMapping("/vip/recharge/state")
     @ApiOperation(value = "校验充值是否成功", response = RechargeStateVo.class)
-    public ApiResponse checkRechargeState(@RequestParam String orderNo){
-        return new ApiResponse.Ok("", hRepository.loopRechargeSuccess(orderNo));
+    public ApiResponse checkRechargeState(@RequestParam String orderNo) {
+        if (!hRepository.loopRechargeSuccess(orderNo)) {
+            throw new BizException(19010701, "等待支付");
+        }
+        return new ApiResponse.Ok("支付成功");
     }
 
 
