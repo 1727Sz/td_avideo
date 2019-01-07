@@ -653,7 +653,7 @@ public class HRepository {
             // 无奈用payTime有无值来判断。
             // 希望这个值能说明是否支付
 
-            return order.keySet().contains("payTime");
+            return !order.get("payTime").isJsonNull();
         } catch (IOException e) {
             log.error("充值订单查询第三方时失败，orderNo={}, e={}", orderNo, e);
             throw new BizException(18122003, "订单提交失败，请稍后再试");
